@@ -223,7 +223,9 @@ function loadPhotoForResize(file) {
 }
 
 function updateResizeW(val) {
-  const w = parseInt(val) || 100;
+  const num = parseInt(val);
+  if (isNaN(num) || num <= 0) return; // 无效输入不改变状态
+  const w = Math.round(num);
   if (appState.resizeLockRatio) {
     const h = Math.round(w / appState.resizeRatio);
     setState({resizeW:w, resizeH:h});
@@ -233,7 +235,9 @@ function updateResizeW(val) {
 }
 
 function updateResizeH(val) {
-  const h = parseInt(val) || 100;
+  const num = parseInt(val);
+  if (isNaN(num) || num <= 0) return;
+  const h = Math.round(num);
   if (appState.resizeLockRatio) {
     const w = Math.round(h * appState.resizeRatio);
     setState({resizeW:w, resizeH:h});
@@ -599,13 +603,13 @@ function renderResize() {
           <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
             <div style="flex:1">
               <div style="font-size:9px;color:#9b9080;margin-bottom:4px">宽度</div>
-              <input type="number" id="resizeWInput" value="${s.resizeW}" onchange="updateResizeW(this.value)"
+              <input type="number" id="resizeWInput" value="${s.resizeW}" onblur="updateResizeW(this.value)"
                 style="width:100%;padding:8px 10px;border:1.5px solid #D4CFC6;border-radius:8px;font-size:14px;font-weight:600;background:#FDFBF7">
             </div>
             <span style="color:#9b9080;margin-top:16px">×</span>
             <div style="flex:1">
               <div style="font-size:9px;color:#9b9080;margin-bottom:4px">高度</div>
-              <input type="number" id="resizeHInput" value="${s.resizeH}" onchange="updateResizeH(this.value)"
+              <input type="number" id="resizeHInput" value="${s.resizeH}" onblur="updateResizeH(this.value)"
                 style="width:100%;padding:8px 10px;border:1.5px solid #D4CFC6;border-radius:8px;font-size:14px;font-weight:600;background:#FDFBF7">
             </div>
           </div>
