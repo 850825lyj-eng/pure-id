@@ -28,7 +28,6 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;hei
 <body>
 <div id="root"></div>
 <script>
-// ==================== 全局数据 ====================
 const DOCS=[
   {id:"cn_passport",flag:"🇨🇳",label:"中国护照",size:"33×48mm",dpi:300,notes:"白色背景，正面免冠，耳朵可见"},
   {id:"us_visa",flag:"🇺🇸",label:"美国签证",size:"2×2 inch",dpi:300,notes:"白色背景，6个月内，不可戴眼镜"},
@@ -48,7 +47,6 @@ const FORMATS=[
   {id:"image/webp",label:"WebP",ext:"webp",desc:"兼顾画质与体积"},
 ];
 
-// ==================== 纯前端抠图换背景 ====================
 function canvasBgReplace(imgSrc, hex) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -100,7 +98,6 @@ function canvasBgReplace(imgSrc, hex) {
   });
 }
 
-// ==================== 纯前端合规检测 ====================
 function localComplianceCheck(imgSrc, doc) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -140,7 +137,6 @@ function localComplianceCheck(imgSrc, doc) {
   });
 }
 
-// ==================== 格式转换 ====================
 function convertFormat(imgSrc, targetFormat, quality) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -160,19 +156,18 @@ function convertFormat(imgSrc, targetFormat, quality) {
   });
 }
 
-// ==================== 尺寸调整 ====================
 function resizeImage(imgSrc, width, height, format, quality) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = width;
-      canvas.height = height || Math.round(img.naturalHeight * (width / img.naturalWidth));
+      canvas.height = height;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, width, height);
       canvas.toBlob(blob => {
         const url = URL.createObjectURL(blob);
-        resolve({url, blob, size: blob.size, width: canvas.width, height: canvas.height});
+        resolve({url, blob, size: blob.size, width: width, height: height});
       }, format, quality / 100);
     };
     img.onerror = reject;
@@ -180,12 +175,12 @@ function resizeImage(imgSrc, width, height, format, quality) {
   });
 }
 
-// ==================== 全局状态 ====================
 let appState = {
   tab:'idphoto',
   phase:'idle', src:null, proc:null, doc:DOCS[0], bg:BGS[0], result:null, msg:'', pay:false,
   convFormat:FORMATS[0], convQuality:80, convResult:null, convSize:null, convBlob:null,
-  resizeW:800, resizeH:null, resizeFormat:FORMATS[0], resizeQuality:80, resizeResult:null, resizeSize:null, resizeBlob:null,
+  resizeW:800, resizeH:600, resizeFormat:FORMATS[0], resizeQuality:80, resizeResult:null, resizeSize:null, resizeBlob:null,
+  resizeLockRatio: true, resizeRatio: 1.333
 };
 
 function setState(update) {
@@ -212,10 +207,43 @@ function loadPhotoForResize(file) {
   const rd = new FileReader();
   rd.onload = e => {
     const img = new Image();
-    img.onload = () => setState({src:e.target.result, resizeW:img.naturalWidth, resizeH:img.naturalHeight});
+    img.onload = () => {
+      const ratio = img.naturalWidth / img.naturalHeight;
+      setState({
+        src:e.target.result,
+        resizeW:img.naturalWidth,
+        resizeH:img.naturalHeight,
+        resizeRatio:ratio,
+        resizeResult:null
+      });
+    };
     img.src = e.target.result;
   };
   rd.readAsDataURL(file);
+}
+
+function updateResizeW(val) {
+  const w = parseInt(val) || 100;
+  if (appState.resizeLockRatio) {
+    const h = Math.round(w / appState.resizeRatio);
+    setState({resizeW:w, resizeH:h});
+  } else {
+    setState({resizeW:w});
+  }
+}
+
+function updateResizeH(val) {
+  const h = parseInt(val) || 100;
+  if (appState.resizeLockRatio) {
+    const w = Math.round(h * appState.resizeRatio);
+    setState({resizeW:w, resizeH:h});
+  } else {
+    setState({resizeH:h});
+  }
+}
+
+function toggleResizeLock() {
+  setState({resizeLockRatio:!appState.resizeLockRatio});
 }
 
 async function processIdPhoto() {
@@ -280,7 +308,6 @@ function renderFooter() {
 }
 
 function renderIdle() {
-  const s = appState;
   return `
     <div class="fu" style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px">
       <div class="zone" onDragOver="event.preventDefault()" onDrop="event.preventDefault();if(event.dataTransfer.files[0])loadPhoto(event.dataTransfer.files[0])" onclick="document.getElementById('fileInput1').click()"
@@ -546,7 +573,7 @@ function renderResize() {
   const s = appState;
   return `
     <div style="flex:1;display:flex;overflow:hidden">
-      <div style="width:260px;min-width:260px;flex-shrink:0;background:#FDFBF7;border-right:1px solid #E2DED6;display:flex;flex-direction:column;overflow:hidden">
+      <div style="width:280px;min-width:280px;flex-shrink:0;background:#FDFBF7;border-right:1px solid #E2DED6;display:flex;flex-direction:column;overflow:hidden">
         <div style="flex:1;overflow-y:auto;padding:14px">
           <div style="font-size:8px;font-weight:700;color:#9b9080;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">上传图片</div>
           ${!s.src?`
@@ -561,12 +588,28 @@ function renderResize() {
               <img src="${s.src}" style="width:100%;display:block">
             </div>
           `}
-          <div style="font-size:8px;font-weight:700;color:#9b9080;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">目标宽度 (px)</div>
-          <input type="number" value="${s.resizeW}" oninput="setState({resizeW:parseInt(this.value)||800})"
-            style="width:100%;padding:8px 10px;border:1.5px solid #D4CFC6;border-radius:8px;font-size:14px;font-weight:600;margin-bottom:10px;background:#FDFBF7">
-          <div style="font-size:8px;font-weight:700;color:#9b9080;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">目标高度 (px，留空按比例)</div>
-          <input type="number" value="${s.resizeH||''}" oninput="setState({resizeH:this.value?parseInt(this.value):null})" placeholder="自动按比例"
-            style="width:100%;padding:8px 10px;border:1.5px solid #D4CFC6;border-radius:8px;font-size:14px;margin-bottom:10px;background:#FDFBF7">
+          
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:8px;font-weight:700;color:#9b9080;letter-spacing:2px;text-transform:uppercase">目标尺寸 (px)</div>
+            <button onclick="toggleResizeLock()" 
+              style="display:flex;align-items:center;gap:4px;font-size:10px;padding:3px 10px;border-radius:12px;cursor:pointer;border:1px solid ${s.resizeLockRatio?'#C8A96E':'#D4CFC6'};background:${s.resizeLockRatio?'#FDF5E6':'#FDFBF7'};color:${s.resizeLockRatio?'#8B6914':'#9b9080'};font-weight:600">
+              ${s.resizeLockRatio?'🔗 保持比例':'🔓 自由尺寸'}
+            </button>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+            <div style="flex:1">
+              <div style="font-size:9px;color:#9b9080;margin-bottom:4px">宽度</div>
+              <input type="number" id="resizeWInput" value="${s.resizeW}" onchange="updateResizeW(this.value)"
+                style="width:100%;padding:8px 10px;border:1.5px solid #D4CFC6;border-radius:8px;font-size:14px;font-weight:600;background:#FDFBF7">
+            </div>
+            <span style="color:#9b9080;margin-top:16px">×</span>
+            <div style="flex:1">
+              <div style="font-size:9px;color:#9b9080;margin-bottom:4px">高度</div>
+              <input type="number" id="resizeHInput" value="${s.resizeH}" onchange="updateResizeH(this.value)"
+                style="width:100%;padding:8px 10px;border:1.5px solid #D4CFC6;border-radius:8px;font-size:14px;font-weight:600;background:#FDFBF7">
+            </div>
+          </div>
+          
           <div style="font-size:8px;font-weight:700;color:#9b9080;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">输出格式</div>
           <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
             ${FORMATS.map(f=>`
@@ -597,7 +640,7 @@ function renderResize() {
           <div style="text-align:center;color:#9b9080">
             <div style="font-size:48px;margin-bottom:12px">📐</div>
             <div style="font-size:14px;font-weight:600">上传图片，设置尺寸，一键调整</div>
-            <div style="font-size:11px;margin-top:4px">支持按像素精确调整，自动保持比例</div>
+            <div style="font-size:11px;margin-top:4px">默认保持原比例，可切换自由尺寸</div>
           </div>
         `}
       </div>
