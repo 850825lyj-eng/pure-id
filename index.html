@@ -31,12 +31,15 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 .doc-card .info{font-size:10px;color:var(--text2)}
 .upload-zone{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:36px 20px;text-align:center;cursor:pointer;background:#fdfcf9;transition:.2s}
 .upload-zone:hover{border-color:var(--accent);background:#fdf8f0}
+/* 背景色球选中状态 */
+.bg-swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;transition:all .2s;border:3px solid transparent;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.bg-swatch:hover{border-color:var(--accent)}
+.bg-swatch.selected{border-color:var(--accent);transform:scale(1.35);box-shadow:0 0 0 3px rgba(200,169,110,.35)}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script>
-// ========== 8 个完整证件类型 ==========
 const DOCS=[
   {id:"cn_passport",flag:"🇨🇳",label:"中国护照",size:"33×48mm",dpi:300,notes:"白底，免冠，耳朵可见"},
   {id:"us_visa",flag:"🇺🇸",label:"美国签证",size:"2×2″",dpi:300,notes:"白底，6个月内，无眼镜"},
@@ -55,7 +58,6 @@ const BGS=[
 ];
 const FORMATS=[{id:"image/jpeg",ext:"jpg"},{id:"image/png",ext:"png"},{id:"image/webp",ext:"webp"}];
 
-// ========== 图像处理 ==========
 function bgReplace(src,hex){return new Promise((ok)=>{
   const img=new Image();img.onload=()=>{
     const W=600,H=800,c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
@@ -84,7 +86,6 @@ function resizeImg(src,w,h,fmt,q,mode){return new Promise((ok)=>{
 })}
 function dl(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 
-// ========== 本地合规检测（差异化核心） ==========
 function localComplianceCheck(imgSrc,doc){
   return new Promise((resolve)=>{
     const img=new Image();img.onload=()=>{
@@ -98,22 +99,21 @@ function localComplianceCheck(imgSrc,doc){
       });
       avgR/=sn;avgG/=sn;avgB/=sn;
       const checks=[
-        {name:"面部区域",status:"pass",detail:"照片亮度正常，可检测到主体"},
-        {name:"背景检测",status:avgR>180&&avgG>180&&avgB>180?"pass":"warn",detail:avgR>180?"背景较为纯净":"建议使用纯色背景"},
-        {name:"构图居中",status:"pass",detail:"人物大致居中，布局合理"},
-        {name:"照片清晰",status:"pass",detail:"分辨率满足证件照要求"},
-        {name:"光线均匀",status:"warn",detail:"建议在均匀光线下拍摄"},
-        {name:"格式合规",status:"pass",detail:"图片格式符合要求"},
+        {name:"面部区域",status:"pass",detail:"照片亮度正常"},
+        {name:"背景检测",status:avgR>180&&avgG>180&&avgB>180?"pass":"warn",detail:avgR>180?"背景纯净":"建议用纯色背景"},
+        {name:"构图居中",status:"pass",detail:"人物大致居中"},
+        {name:"照片清晰",status:"pass",detail:"分辨率达标"},
+        {name:"光线均匀",status:"warn",detail:"建议均匀光线"},
+        {name:"格式合规",status:"pass",detail:"格式符合要求"},
       ];
       const passCount=checks.filter(c=>c.status==="pass").length;
       const overall=passCount>=4?"pass":(passCount>=2?"warn":"fail");
       const score=passCount>=5?85:(passCount>=4?72:55);
-      resolve({overall,score,checks,topIssue:checks.some(c=>c.status==="warn")?"建议优化拍摄环境，使用纯色背景":null});
+      resolve({overall,score,checks,topIssue:checks.some(c=>c.status==="warn")?"建议优化拍摄环境":null});
     };img.src=imgSrc;
   });
 }
 
-// ========== 全局状态 ==========
 let S={
   tab:0,
   id:{phase:0,src:null,proc:null,doc:0,bg:0,result:null},
@@ -124,7 +124,12 @@ let iw='800',ih='600';
 const m=()=>window.innerWidth<768;
 function load(f,cb){if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>cb(e.target.result);r.readAsDataURL(f)}
 
-// ========== 渲染入口 ==========
+// ========== 背景色切换函数 ==========
+function selectBg(index) {
+  S.id.bg = index;
+  render();
+}
+
 function App(){
   const isM=m();
   const tabs=['🪪 证件照','🔄 格式转换','📐 尺寸调整'];
@@ -142,7 +147,6 @@ function App(){
   </div>`;
 }
 
-// ========== 证件照 ==========
 function Id(){
   const s=S.id,up=!s.src;
   const sidebar=`
@@ -159,11 +163,12 @@ function Id(){
       </div>
       <div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:700">背景色</div>
-        <div style="display:flex;gap:14px;justify-content:center">
-          ${BGS.map((b,i)=>`<div onclick="S.id.bg=${i};render()" title="${b.label}" style="width:32px;height:32px;border-radius:50%;background:${b.hex};cursor:pointer;transition:all .2s;transform:${S.id.bg===i?'scale(1.3)':'scale(1)'};box-shadow:${S.id.bg===i?'0 0 0 4px var(--accent)':b.hex==='#FFFFFF'?'inset 0 0 0 1px #ddd':'none'}"></div>`).join('')}
+        <div style="display:flex;gap:16px;justify-content:center;align-items:center">
+          ${BGS.map((b,i)=>`<div onclick="selectBg(${i})" title="${b.label}" class="bg-swatch ${S.id.bg===i?'selected':''}" style="background:${b.hex};${b.hex==='#FFFFFF'?'box-shadow:0 1px 3px rgba(0,0,0,.08),inset 0 0 0 1px #ddd;':''}"></div>`).join('')}
         </div>
+        <div style="text-align:center;font-size:11px;color:var(--accent);margin-top:6px;font-weight:600">当前：${BGS[S.id.bg].label}</div>
       </div>
-      <button onclick="idProcess()" class="btn btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>${s.phase===3?'🔄 重新生成':'✨ 开始制作'}</button>
+      <button onclick="idProcess()" class="btn btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>${s.phase>=3?'🔄 重新生成':'✨ 开始制作'}</button>
     </div>`;
   
   const main=`
@@ -172,9 +177,10 @@ function Id(){
       :s.phase===1?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto"><img src="${s.src}" style="width:100%"></div><div style="margin-top:12px;color:var(--text2);font-size:13px">${DOCS[s.doc].label} · ${BGS[s.bg].label}背景</div></div>`
       :s.phase===2?`<div style="text-align:center"><div style="width:44px;height:44px;border-radius:50%;border:3px solid #eee;border-top-color:var(--accent);animation:spin .8s linear infinite;margin:0 auto 12px"></div><div>智能处理中…</div></div>`
       :s.phase===3&&s.proc&&s.result?`<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">✨ 证件照生成完成</div>
-        <div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:280px;margin:0 auto 20px">
+        <div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:280px;margin:0 auto 20px;border:3px solid ${BGS[s.bg].hex==='#FFFFFF'?'#eee':BGS[s.bg].hex}">
           <img src="${s.proc}" style="width:100%;display:block">
         </div>
+        <div style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:16px">${DOCS[s.doc].label} · ${BGS[s.bg].label}背景</div>
         <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,.04)">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
             <svg width="60" height="60"><circle cx="30" cy="30" r="24" fill="none" stroke="#eee" stroke-width="4"/><circle cx="30" cy="30" r="24" fill="none" stroke="${s.result.overall==='pass'?'#1A7F45':(s.result.overall==='warn'?'#A06A00':'#B03030')}" stroke-width="4" stroke-dasharray="${2*Math.PI*24}" stroke-dashoffset="${2*Math.PI*24*(1-s.result.score/100)}" stroke-linecap="round" transform="rotate(-90 30 30)"/><text x="30" y="36" text-anchor="middle" fill="${s.result.overall==='pass'?'#1A7F45':(s.result.overall==='warn'?'#A06A00':'#B03030')}" font-size="14" font-weight="800">${s.result.score}</text></svg>
@@ -195,7 +201,6 @@ function Id(){
   return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:340px;flex-shrink:0;overflow-y:auto;max-height:100%">${sidebar}</div><div style="flex:1;min-width:0">${main}</div></div>`;
 }
 
-// ========== 格式转换 ==========
 function Conv(){
   const s=S.conv;
   const sidebar=`<div style="display:flex;flex-direction:column;gap:16px">
@@ -215,7 +220,6 @@ function Conv(){
   return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">${sidebar}</div><div style="flex:1">${main}</div></div>`;
 }
 
-// ========== 尺寸调整 ==========
 function Resize(){
   const s=S.resize;
   const sidebar=`<div style="display:flex;flex-direction:column;gap:16px">
@@ -243,11 +247,12 @@ function Resize(){
   return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">${sidebar}</div><div style="flex:1">${main}</div></div>`;
 }
 
-// ========== 处理逻辑 ==========
 async function idProcess(){
+  const selectedBgIndex = S.id.bg;
+  const selectedHex = BGS[selectedBgIndex].hex;
   S.id.phase=2;render();
   let p=S.id.src;
-  try{p=await bgReplace(p,BGS[S.id.bg].hex)}catch(e){}
+  try{p=await bgReplace(p,selectedHex)}catch(e){}
   S.id.proc=p;
   const result=await localComplianceCheck(S.id.src,DOCS[S.id.doc]);
   S.id.result=result;S.id.phase=3;render();
