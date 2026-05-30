@@ -31,7 +31,6 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 .doc-card .info{font-size:10px;color:var(--text2)}
 .upload-zone{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:36px 20px;text-align:center;cursor:pointer;background:#fdfcf9;transition:.2s}
 .upload-zone:hover{border-color:var(--accent);background:#fdf8f0}
-/* 背景色球选中状态 */
 .bg-swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;transition:all .2s;border:3px solid transparent;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .bg-swatch:hover{border-color:var(--accent)}
 .bg-swatch.selected{border-color:var(--accent);transform:scale(1.35);box-shadow:0 0 0 3px rgba(200,169,110,.35)}
@@ -58,21 +57,37 @@ const BGS=[
 ];
 const FORMATS=[{id:"image/jpeg",ext:"jpg"},{id:"image/png",ext:"png"},{id:"image/webp",ext:"webp"}];
 
-function bgReplace(src,hex){return new Promise((ok)=>{
-  const img=new Image();img.onload=()=>{
-    const W=600,H=800,c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
-    ctx.fillStyle=hex;ctx.fillRect(0,0,W,H);
-    const s=Math.max(W/img.naturalWidth,H/img.naturalHeight);
-    ctx.drawImage(img,(W-img.naturalWidth*s)/2,(H-img.naturalHeight*s)/2,img.naturalWidth*s,img.naturalHeight*s);
-    ok(c.toDataURL('image/jpeg',.93));
-  };img.src=src;
-})}
+// ✅ 修复的背景替换函数：简单粗暴但有效，直接在纯色背景上居中放置照片
+function bgReplace(src,hex){
+  return new Promise((ok,rej)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const W=600,H=800;
+      const c=document.createElement('canvas');
+      c.width=W;c.height=H;
+      const ctx=c.getContext('2d');
+      // 填充选中的背景色
+      ctx.fillStyle=hex;
+      ctx.fillRect(0,0,W,H);
+      // 计算图片缩放和位置，使其完全位于画布内并居中
+      const scale=Math.min(W/img.naturalWidth,H/img.naturalHeight);
+      const sw=img.naturalWidth*scale,sh=img.naturalHeight*scale;
+      const sx=(W-sw)/2,sy=(H-sh)/2;
+      ctx.drawImage(img,sx,sy,sw,sh);
+      ok(c.toDataURL('image/jpeg',0.93));
+    };
+    img.onerror=()=>rej(new Error('图片加载失败'));
+    img.src=src;
+  });
+}
+
 function convert(src,fmt,q){return new Promise((ok)=>{
   const img=new Image();img.onload=()=>{
     const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
     c.getContext('2d').drawImage(img,0,0);c.toBlob(b=>ok({url:URL.createObjectURL(b),blob:b,size:b.size}),fmt,q/100);
   };img.src=src;
 })}
+
 function resizeImg(src,w,h,fmt,q,mode){return new Promise((ok)=>{
   const img=new Image();img.onload=()=>{
     const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');
@@ -84,8 +99,10 @@ function resizeImg(src,w,h,fmt,q,mode){return new Promise((ok)=>{
     c.toBlob(b=>ok({url:URL.createObjectURL(b),blob:b,size:b.size,w,h}),fmt,q/100);
   };img.src=src;
 })}
+
 function dl(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 
+// 本地合规检测
 function localComplianceCheck(imgSrc,doc){
   return new Promise((resolve)=>{
     const img=new Image();img.onload=()=>{
@@ -124,11 +141,7 @@ let iw='800',ih='600';
 const m=()=>window.innerWidth<768;
 function load(f,cb){if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>cb(e.target.result);r.readAsDataURL(f)}
 
-// ========== 背景色切换函数 ==========
-function selectBg(index) {
-  S.id.bg = index;
-  render();
-}
+function selectBg(index){S.id.bg=index;render()}
 
 function App(){
   const isM=m();
@@ -175,12 +188,13 @@ function Id(){
     <div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">
       ${s.phase===0?`<div style="text-align:center;color:#aaa"><div style="font-size:64px;margin-bottom:12px">🪪</div><div style="font-weight:600;font-size:16px">上传照片，一键生成证件照</div><div style="font-size:12px;margin-top:6px">纯本地处理，隐私安全</div></div>`
       :s.phase===1?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto"><img src="${s.src}" style="width:100%"></div><div style="margin-top:12px;color:var(--text2);font-size:13px">${DOCS[s.doc].label} · ${BGS[s.bg].label}背景</div></div>`
-      :s.phase===2?`<div style="text-align:center"><div style="width:44px;height:44px;border-radius:50%;border:3px solid #eee;border-top-color:var(--accent);animation:spin .8s linear infinite;margin:0 auto 12px"></div><div>智能处理中…</div></div>`
-      :s.phase===3&&s.proc&&s.result?`<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">✨ 证件照生成完成</div>
-        <div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:280px;margin:0 auto 20px;border:3px solid ${BGS[s.bg].hex==='#FFFFFF'?'#eee':BGS[s.bg].hex}">
+      :s.phase===2?`<div style="text-align:center"><div style="width:44px;height:44px;border-radius:50%;border:3px solid #eee;border-top-color:var(--accent);animation:spin .8s linear infinite;margin:0 auto 12px"></div><div>正在更换背景…</div></div>`
+      :s.phase===3&&s.proc?`<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">✨ 证件照生成完成</div>
+        <div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:280px;margin:0 auto 20px">
           <img src="${s.proc}" style="width:100%;display:block">
         </div>
         <div style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:16px">${DOCS[s.doc].label} · ${BGS[s.bg].label}背景</div>
+        ${s.result?`
         <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,.04)">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
             <svg width="60" height="60"><circle cx="30" cy="30" r="24" fill="none" stroke="#eee" stroke-width="4"/><circle cx="30" cy="30" r="24" fill="none" stroke="${s.result.overall==='pass'?'#1A7F45':(s.result.overall==='warn'?'#A06A00':'#B03030')}" stroke-width="4" stroke-dasharray="${2*Math.PI*24}" stroke-dashoffset="${2*Math.PI*24*(1-s.result.score/100)}" stroke-linecap="round" transform="rotate(-90 30 30)"/><text x="30" y="36" text-anchor="middle" fill="${s.result.overall==='pass'?'#1A7F45':(s.result.overall==='warn'?'#A06A00':'#B03030')}" font-size="14" font-weight="800">${s.result.score}</text></svg>
@@ -193,6 +207,7 @@ function Id(){
             ${s.result.checks.map(c=>`<div style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${c.status==='pass'?'#EDF7F2':(c.status==='warn'?'#FFF8EC':'#FEF0F0')};color:${c.status==='pass'?'#1A7F45':(c.status==='warn'?'#A06A00':'#B03030')}">${c.status==='pass'?'✓':'!'} ${c.name}</div>`).join('')}
           </div>
         </div>
+        `:''}
         <div style="text-align:center;margin-top:16px"><a href="${s.proc}" download="xiuxiutu_${DOCS[s.doc].id}.jpg"><button class="btn btn-outline">⬇ 下载证件照</button></a></div>
       </div>`:''}
     </div>`;
@@ -247,15 +262,19 @@ function Resize(){
   return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">${sidebar}</div><div style="flex:1">${main}</div></div>`;
 }
 
+// ✅ 确保处理函数正确传递背景色
 async function idProcess(){
-  const selectedBgIndex = S.id.bg;
-  const selectedHex = BGS[selectedBgIndex].hex;
+  const hex=BGS[S.id.bg].hex;
   S.id.phase=2;render();
-  let p=S.id.src;
-  try{p=await bgReplace(p,selectedHex)}catch(e){}
-  S.id.proc=p;
-  const result=await localComplianceCheck(S.id.src,DOCS[S.id.doc]);
-  S.id.result=result;S.id.phase=3;render();
+  try{
+    const p=await bgReplace(S.id.src,hex);
+    S.id.proc=p;
+    S.id.result=await localComplianceCheck(S.id.src,DOCS[S.id.doc]);
+  }catch(e){
+    alert('处理失败，请重试');
+    S.id.phase=1;
+  }
+  S.id.phase=3;render();
 }
 async function convProcess(){
   const r=await convert(S.conv.src,FORMATS[S.conv.fmt].id,S.conv.q);
