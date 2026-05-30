@@ -2,45 +2,70 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <title>修修图 · 智能图片工具</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
 <style>
+:root {
+  --bg: #f4f3f0;
+  --card: #ffffff;
+  --text: #1e1e1e;
+  --text2: #6b6b6b;
+  --accent: #c8a96e;
+  --accent2: #f5efe4;
+  --border: #e8e5e0;
+  --shadow: 0 8px 30px rgba(0,0,0,0.04);
+  --radius: 28px;
+  --radius-sm: 18px;
+}
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f8f7f4;color:#1e1e1e}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);}
 button,input,select{font-family:inherit}
 button{cursor:pointer;border:none;background:none}
 input[type="range"]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:#ddd}
-input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#c8a96e;cursor:pointer;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-/* 共用 */
-.card{background:#fff;border-radius:28px;padding:24px;box-shadow:0 8px 30px rgba(0,0,0,.04)}
-.btn-primary{background:linear-gradient(135deg,#d4b87a,#b08d48);color:#fff;font-weight:700;border-radius:30px;padding:14px 28px;font-size:16px;box-shadow:0 6px 20px rgba(200,169,110,.3)}
-.btn-outline{background:#fff;border:1.5px solid #e0dbd0;color:#5c5346;font-weight:600;border-radius:30px;padding:12px 24px;font-size:14px}
-.tag{display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;border:1.5px solid #e0dbd0;cursor:pointer;transition:all .2s}
-.tag.active{background:#fcf7ef;border-color:#c8a96e;color:#8b6914;font-weight:700}
-.upload-zone{border:2px dashed #d5cfc4;border-radius:24px;padding:40px 20px;text-align:center;cursor:pointer;background:#fdfcf9;transition:.2s}
-.upload-zone:hover{border-color:#c8a96e;background:#fdf8f0}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.anim{animation:fadeIn .3s ease}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp .3s ease}
+/* 卡片 */
+.card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);}
+.btn{display:inline-block;padding:12px 28px;border-radius:30px;font-weight:700;font-size:15px;transition:.2s;text-align:center;}
+.btn-primary{background:linear-gradient(135deg,#d4b87a,#b08d48);color:#fff;box-shadow:0 4px 16px rgba(200,169,110,.3);}
+.btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--text2);}
+.tag{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);cursor:pointer;transition:.2s;}
+.tag.active{background:var(--accent2);border-color:var(--accent);color:#8b6914;font-weight:700;}
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:36px 20px;text-align:center;cursor:pointer;background:#fdfcf9;transition:.2s;}
+.upload-zone:hover{border-color:var(--accent);background:#fdf8f0;}
+.doc-card{cursor:pointer;padding:12px;border-radius:var(--radius-sm);border:2px solid transparent;background:var(--bg);transition:.2s;display:flex;flex-direction:column;gap:4px;}
+.doc-card:hover{border-color:var(--accent);}
+.doc-card.selected{border-color:var(--accent);background:var(--accent2);}
+.doc-card .flag{font-size:24px;}
+.doc-card .name{font-weight:700;font-size:13px;}
+.doc-card .info{font-size:10px;color:var(--text2);}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script>
-// ----- 数据 -----
+// ========== 数据恢复：8个证件类型 ==========
 const DOCS=[
-  {id:"cn_passport",flag:"🇨🇳",label:"中国护照",size:"33×48mm"},
-  {id:"us_visa",flag:"🇺🇸",label:"美国签证",size:"2×2″"},
-  {id:"id_card",flag:"🪪",label:"身份证",size:"26×32mm"},
+  {id:"cn_passport",flag:"🇨🇳",label:"中国护照",size:"33×48mm",dpi:300,notes:"白底，免冠，耳朵可见"},
+  {id:"us_visa",flag:"🇺🇸",label:"美国签证",size:"2×2″",dpi:300,notes:"白底，6个月内，无眼镜"},
+  {id:"schengen",flag:"🇪🇺",label:"申根签证",size:"35×45mm",dpi:300,notes:"浅灰/白底，露耳朵"},
+  {id:"uk_visa",flag:"🇬🇧",label:"英国签证",size:"35×45mm",dpi:600,notes:"浅灰底，无美化滤镜"},
+  {id:"jp_visa",flag:"🇯🇵",label:"日本签证",size:"35×45mm",dpi:300,notes:"白底，近6月，无眼镜"},
+  {id:"cn_exam",flag:"📝",label:"国内考试",size:"35×45mm",dpi:300,notes:"蓝或白底，近3月"},
+  {id:"id_card",flag:"🪪",label:"身份证",size:"26×32mm",dpi:350,notes:"蓝底，正面免冠"},
+  {id:"linkedin",flag:"💼",label:"LinkedIn",size:"400×400px",dpi:72,notes:"专业感，简洁背景"},
 ];
 const BGS=[
-  {id:"white",hex:"#FFFFFF"},
-  {id:"blue",hex:"#4F7DC8"},
-  {id:"red",hex:"#BE3A3A"},
+  {hex:"#FFFFFF",label:"纯白"},
+  {hex:"#4F7DC8",label:"证件蓝"},
+  {hex:"#BE3A3A",label:"红色"},
+  {hex:"#E6E6E6",label:"浅灰"},
 ];
 const FORMATS=[{id:"image/jpeg",ext:"jpg"},{id:"image/png",ext:"png"},{id:"image/webp",ext:"webp"}];
 
-// ----- 工具函数 -----
+// ========== 图像处理函数（不变） ==========
 function bgReplace(src,hex){return new Promise((ok)=>{
   const img=new Image();img.onload=()=>{
     const W=600,H=800,c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
@@ -50,14 +75,12 @@ function bgReplace(src,hex){return new Promise((ok)=>{
     ok(c.toDataURL('image/jpeg',.93));
   };img.src=src;
 })}
-
 function convert(src,fmt,q){return new Promise((ok)=>{
   const img=new Image();img.onload=()=>{
     const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
     c.getContext('2d').drawImage(img,0,0);c.toBlob(b=>ok({url:URL.createObjectURL(b),blob:b,size:b.size}),fmt,q/100);
   };img.src=src;
 })}
-
 function resizeImg(src,w,h,fmt,q,mode){return new Promise((ok)=>{
   const img=new Image();img.onload=()=>{
     const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');
@@ -69,126 +92,153 @@ function resizeImg(src,w,h,fmt,q,mode){return new Promise((ok)=>{
     c.toBlob(b=>ok({url:URL.createObjectURL(b),blob:b,size:b.size,w,h}),fmt,q/100);
   };img.src=src;
 })}
-
 function dl(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 
-// ----- 状态 -----
-let S={tab:0,id:{phase:0,src:null,proc:null,doc:0,bg:0,result:null},conv:{src:null,fmt:0,q:80,res:null,size:0,blob:null},resize:{src:null,w:800,h:600,fmt:0,q:80,mode:'fit',res:null,size:0,blob:null}};
+// ========== 状态 ==========
+let S={
+  tab:0,
+  id:{phase:0,src:null,proc:null,doc:0,bg:0,result:null},
+  conv:{src:null,fmt:0,q:80,res:null,size:0,blob:null},
+  resize:{src:null,w:800,h:600,fmt:0,q:80,mode:'fit',res:null,size:0,blob:null}
+};
 let iw='800',ih='600';
 const m=()=>window.innerWidth<768;
 
 function load(f,cb){if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>cb(e.target.result);r.readAsDataURL(f)}
 
-// ----- 渲染 -----
+// ========== 渲染 ==========
 function App(){
   return `<div style="height:100vh;display:flex;flex-direction:column;overflow:hidden">
-    <div style="padding:16px 20px 8px;display:flex;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:44px;height:44px;border-radius:16px;background:linear-gradient(135deg,#d4b87a,#b08d48);display:flex;align-items:center;justify-content:center;font-size:24px">✨</div>
-        <div><div style="font-size:22px;font-weight:800">修修图</div><div style="font-size:11px;color:#888">智能图片工具</div></div>
+    <!-- 顶部 -->
+    <div style="padding:12px 20px 8px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#d4b87a,#b08d48);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">✨</div>
+        <div><div style="font-size:20px;font-weight:800">修修图</div><div style="font-size:10px;color:var(--text2)">智能图片工具</div></div>
       </div>
-      <div style="display:flex;gap:6px;background:#fff;border-radius:30px;padding:3px;box-shadow:0 2px 12px rgba(0,0,0,.04)">
-        ${[['🪪','证件照'],['🔄','转换'],['📐','尺寸']].map((x,i)=>`<button onclick="S.tab=${i};render()" style="padding:8px ${m()?14:20}px;border-radius:30px;font-size:14px;font-weight:700;background:${S.tab===i?'#c8a96e':'transparent'};color:${S.tab===i?'#fff':'#888'}">${x[0]} ${m()?'':x[1]}</button>`).join('')}
+      <div style="display:flex;gap:6px;background:#fff;border-radius:30px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.03)">
+        ${['🪪 证件照','🔄 格式转换','📐 尺寸调整'].map((t,i)=>`<button onclick="S.tab=${i};render()" style="padding:8px ${m()?12:18}px;border-radius:30px;font-size:13px;font-weight:700;background:${S.tab===i?'var(--accent)':'transparent'};color:${S.tab===i?'#fff':'var(--text2)'}">${m()?t.slice(0,2):t}</button>`).join('')}
       </div>
     </div>
+    <!-- 内容区 -->
     <div style="flex:1;overflow:auto;padding:0 16px 16px">${S.tab===0?Id():S.tab===1?Conv():Resize()}</div>
   </div>`;
 }
 
+// ========== 证件照 ==========
 function Id(){
   const s=S.id;const up=!s.src;
-  return `<div style="display:flex;flex-direction:${m()?'column':'row'};gap:16px;height:${m()?'auto':'100%'}">
-    <div class="card" style="${m()?'':'width:320px;flex-shrink:0'} display:flex;flex-direction:column;gap:14px">
-      <div style="font-size:18px;font-weight:700">📸 证件照制作</div>
+  const sidebarContent = `
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="font-size:20px;font-weight:700">📸 制作证件照</div>
       ${up?`<div class="upload-zone" onclick="document.getElementById('f1').click()"><div style="font-size:42px">🪪</div><div style="font-weight:600;margin-top:8px">点击上传照片</div><div style="font-size:12px;color:#999;margin-top:4px">JPG/PNG，最大20MB</div></div>`
-      :`<div style="border-radius:16px;overflow:hidden;border:2px solid #eee"><img src="${s.src}" style="width:100%"></div><button onclick="S.id.src=null;S.id.phase=0;render()" style="font-size:12px;color:#888;text-decoration:underline;align-self:flex-start">重新选择</button>`}
+      :`<div style="border-radius:var(--radius-sm);overflow:hidden;border:2px solid var(--border)"><img src="${s.src}" style="width:100%"></div><button onclick="S.id.src=null;S.id.phase=0;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>`}
       <input id="f1" type="file" accept="image/*" hidden onchange="if(this.files[0])load(this.files[0],r=>{S.id.src=r;S.id.phase=1;render()})"/>
       <div>
-        <div style="font-size:12px;color:#888;margin-bottom:8px;font-weight:700">证件类型</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">${DOCS.map((d,i)=>`<span class="tag ${S.id.doc===i?'active':''}" onclick="S.id.doc=${i};render()">${d.flag} ${d.label}</span>`).join('')}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:700">证件类型</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">
+          ${DOCS.map((d,i)=>`
+            <div class="doc-card ${S.id.doc===i?'selected':''}" onclick="S.id.doc=${i};render()">
+              <span class="flag">${d.flag}</span>
+              <span class="name">${d.label}</span>
+              <span class="info">${d.size} · ${d.dpi}DPI</span>
+              <span class="info">${d.notes}</span>
+            </div>
+          `).join('')}
+        </div>
       </div>
       <div>
-        <div style="font-size:12px;color:#888;margin-bottom:8px;font-weight:700">背景色</div>
-        <div style="display:flex;gap:10px">${BGS.map((b,i)=>`<div onclick="S.id.bg=${i};render()" style="width:28px;height:28px;border-radius:50%;background:${b.hex};border:2px solid ${S.id.bg===i?'#c8a96e':'#ddd'};cursor:pointer"></div>`).join('')}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:700">背景色</div>
+        <div style="display:flex;gap:12px">${BGS.map((b,i)=>`<div onclick="S.id.bg=${i};render()" title="${b.label}" style="width:32px;height:32px;border-radius:50%;background:${b.hex};border:2px solid ${S.id.bg===i?'var(--accent)':'var(--border)'};cursor:pointer;box-shadow:${b.hex==='#FFFFFF'?'inset 0 0 0 1px #ddd':'none'}"></div>`).join('')}</div>
       </div>
-      <button onclick="idProcess()" class="btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>${s.phase===2?'🔄 重新生成':'✨ 开始制作'}</button>
-    </div>
-    <div class="card anim" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:300px">
+      <button onclick="idProcess()" class="btn btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>${s.phase===3?'🔄 重新生成':'✨ 开始制作'}</button>
+    </div>`;
+  
+  const mainContent = `
+    <div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">
       ${s.phase===0?`<div style="text-align:center;color:#aaa"><div style="font-size:64px;margin-bottom:12px">🪪</div><div style="font-weight:600;font-size:16px">上传照片，一键生成证件照</div><div style="font-size:12px;margin-top:6px">纯本地处理，隐私安全</div></div>`
-      :s.phase===1?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto"><img src="${s.src}" style="width:100%"></div><div style="margin-top:12px;color:#888">${DOCS[s.doc].label} · ${BGS[s.bg].hex}</div></div>`
-      :s.phase===2?`<div style="text-align:center"><div style="width:40px;height:40px;border-radius:50%;border:3px solid #eee;border-top-color:#c8a96e;animation:spin .8s linear infinite;margin:0 auto 12px"></div><div>处理中…</div></div>`
-      :s.phase===3&&s.proc?`<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">✨ 证件照生成完成</div><div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:20px"><div style="flex:1;min-width:120px;text-align:center"><div style="font-size:10px;color:#aaa;margin-bottom:4px">处理前</div><div style="border-radius:12px;overflow:hidden"><img src="${s.src}" style="width:100%"></div></div><div style="flex:1;min-width:120px;text-align:center"><div style="font-size:10px;color:#c8a96e;margin-bottom:4px;font-weight:700">处理后</div><div style="border-radius:12px;overflow:hidden;border:2px solid ${BGS[s.bg].hex}"><img src="${s.proc}" style="width:100%"></div></div></div><div style="text-align:center"><a href="${s.proc}" download="xiuxiutu_id.jpg"><button class="btn-outline">⬇ 下载</button></a></div></div>`:''}
-    </div>
+      :s.phase===1?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto"><img src="${s.src}" style="width:100%"></div><div style="margin-top:12px;color:var(--text2);font-size:13px">${DOCS[s.doc].label} · ${BGS[s.bg].label}背景</div></div>`
+      :s.phase===2?`<div style="text-align:center"><div style="width:44px;height:44px;border-radius:50%;border:3px solid #eee;border-top-color:var(--accent);animation:spin .8s linear infinite;margin:0 auto 12px"></div><div>智能处理中…</div></div>`
+      :s.phase===3&&s.proc?`<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">✨ 证件照生成完成</div><div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-bottom:20px"><div style="flex:1;min-width:140px;text-align:center"><div style="font-size:10px;color:var(--text2);margin-bottom:6px">处理前</div><div style="border-radius:12px;overflow:hidden;border:2px solid var(--border)"><img src="${s.src}" style="width:100%"></div></div><div style="flex:1;min-width:140px;text-align:center"><div style="font-size:10px;color:var(--accent);margin-bottom:6px;font-weight:700">处理后</div><div style="border-radius:12px;overflow:hidden;border:2px solid ${BGS[s.bg].hex}"><img src="${s.proc}" style="width:100%"></div></div></div><div style="text-align:center"><a href="${s.proc}" download="xiuxiutu_${DOCS[s.doc].id}.jpg"><button class="btn btn-outline">⬇ 下载证件照</button></a></div></div>`:''}
+    </div>`;
+
+  if(m()){
+    return `<div style="display:flex;flex-direction:column;gap:16px;">${sidebarContent}${mainContent}</div>`;
+  }
+  return `<div style="display:flex;gap:16px;height:100%">
+    <div class="card" style="width:340px;flex-shrink:0;overflow-y:auto;max-height:100%">${sidebarContent}</div>
+    <div style="flex:1;min-width:0">${mainContent}</div>
   </div>`;
 }
 
+// ========== 格式转换 ==========
 function Conv(){
   const s=S.conv;
-  return `<div style="display:flex;flex-direction:${m()?'column':'row'};gap:16px;height:${m()?'auto':'100%'}">
-    <div class="card" style="${m()?'':'width:320px;flex-shrink:0'} display:flex;flex-direction:column;gap:14px">
-      <div style="font-size:18px;font-weight:700">🔄 格式转换</div>
+  const sidebarContent = `
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="font-size:20px;font-weight:700">🔄 格式转换</div>
       ${!s.src?`<div class="upload-zone" onclick="document.getElementById('f2').click()"><div style="font-size:42px">🖼️</div><div style="font-weight:600;margin-top:8px">点击上传图片</div></div>`
-      :`<div style="border-radius:16px;overflow:hidden"><img src="${s.src}" style="width:100%"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:#888;text-decoration:underline;align-self:flex-start">重选</button>`}
+      :`<div style="border-radius:var(--radius-sm);overflow:hidden"><img src="${s.src}" style="width:100%"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重选</button>`}
       <input id="f2" type="file" accept="image/*" hidden onchange="if(this.files[0])load(this.files[0],r=>{S.conv.src=r;S.conv.res=null;render()})"/>
-      <div style="display:flex;gap:8px">${FORMATS.map((f,i)=>`<button onclick="S.conv.fmt=${i};render()" style="flex:1;padding:10px;border-radius:16px;font-weight:700;border:2px solid ${S.conv.fmt===i?'#c8a96e':'#e0dbd0'};background:${S.conv.fmt===i?'#fcf7ef':'#fff'}">${f.ext.toUpperCase()}</button>`).join('')}</div>
-      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:#888">质量</span><input type="range" min="10" max="100" value="${s.q}" oninput="S.conv.q=parseInt(this.value);render()"><span style="font-weight:700">${s.q}%</span></div>
-      <button onclick="convProcess()" class="btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>🔄 开始转换</button>
-    </div>
-    <div class="card anim" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:300px">
-      ${s.res?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:10px">转换完成 · ${(s.size/1024).toFixed(1)} KB</div><img src="${s.res}" style="max-width:100%;max-height:60vh;border-radius:16px;margin-bottom:14px"><button onclick="dl(S.conv.blob,'xiuxiutu.'+FORMATS[S.conv.fmt].ext)" class="btn-outline">⬇ 下载</button></div>`
-      :`<div style="text-align:center;color:#aaa"><div style="font-size:48px;margin-bottom:12px">🔄</div><div style="font-weight:600">上传图片，选择格式，一键转换</div></div>`}
-    </div>
+      <div style="display:flex;gap:8px">${FORMATS.map((f,i)=>`<button onclick="S.conv.fmt=${i};render()" style="flex:1;padding:12px;border-radius:16px;font-weight:700;border:2px solid ${S.conv.fmt===i?'var(--accent)':'var(--border)'};background:${S.conv.fmt===i?'var(--accent2)':'#fff'}">${f.ext.toUpperCase()}</button>`).join('')}</div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text2)">质量</span><input type="range" min="10" max="100" value="${s.q}" oninput="S.conv.q=parseInt(this.value);render()"><span style="font-weight:700">${s.q}%</span></div>
+      <button onclick="convProcess()" class="btn btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>🔄 开始转换</button>
+    </div>`;
+  const mainContent = `<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">
+    ${s.res?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:10px">转换完成 · ${(s.size/1024).toFixed(1)} KB</div><img src="${s.res}" style="max-width:100%;max-height:60vh;border-radius:16px;margin-bottom:14px"><button onclick="dl(S.conv.blob,'xiuxiutu.'+FORMATS[S.conv.fmt].ext)" class="btn btn-outline">⬇ 下载</button></div>`
+    :`<div style="text-align:center;color:#aaa"><div style="font-size:48px;margin-bottom:12px">🔄</div><div style="font-weight:600">上传图片，选择格式，一键转换</div></div>`}
   </div>`;
+  if(m()) return `<div style="display:flex;flex-direction:column;gap:16px;">${sidebarContent}${mainContent}</div>`;
+  return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">${sidebarContent}</div><div style="flex:1">${mainContent}</div></div>`;
 }
 
+// ========== 尺寸调整 ==========
 function Resize(){
   const s=S.resize;
-  return `<div style="display:flex;flex-direction:${m()?'column':'row'};gap:16px;height:${m()?'auto':'100%'}">
-    <div class="card" style="${m()?'':'width:320px;flex-shrink:0'} display:flex;flex-direction:column;gap:14px">
-      <div style="font-size:18px;font-weight:700">📐 尺寸调整</div>
+  const sidebarContent = `
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="font-size:20px;font-weight:700">📐 尺寸调整</div>
       ${!s.src?`<div class="upload-zone" onclick="document.getElementById('f3').click()"><div style="font-size:42px">📐</div><div style="font-weight:600;margin-top:8px">点击上传图片</div></div>`
-      :`<div style="border-radius:16px;overflow:hidden"><img src="${s.src}" style="width:100%"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:#888;text-decoration:underline;align-self:flex-start">重选</button>`}
+      :`<div style="border-radius:var(--radius-sm);overflow:hidden"><img src="${s.src}" style="width:100%"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重选</button>`}
       <input id="f3" type="file" accept="image/*" hidden onchange="if(this.files[0])load(this.files[0],r=>{const img=new Image();img.onload=()=>{iw=String(img.naturalWidth);ih=String(img.naturalHeight);S.resize.src=r;S.resize.w=img.naturalWidth;S.resize.h=img.naturalHeight;S.resize.res=null;render()};img.src=r})"/>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span style="font-size:12px;color:#888">宽</span>
-        <input type="number" value="${iw}" oninput="iw=this.value" style="width:70px;padding:8px;border-radius:12px;border:1.5px solid #e0dbd0;font-size:14px;font-weight:700;text-align:center">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--text2)">宽</span>
+        <input type="number" value="${iw}" oninput="iw=this.value" style="width:70px;padding:8px;border-radius:12px;border:1.5px solid var(--border);font-size:14px;font-weight:700;text-align:center">
         <span>×</span>
-        <span style="font-size:12px;color:#888">高</span>
-        <input type="number" value="${ih}" oninput="ih=this.value" style="width:70px;padding:8px;border-radius:12px;border:1.5px solid #e0dbd0;font-size:14px;font-weight:700;text-align:center">
+        <span style="font-size:12px;color:var(--text2)">高</span>
+        <input type="number" value="${ih}" oninput="ih=this.value" style="width:70px;padding:8px;border-radius:12px;border:1.5px solid var(--border);font-size:14px;font-weight:700;text-align:center">
         <span style="font-size:10px;color:#aaa">当前${s.w}×${s.h}</span>
       </div>
       <div style="display:flex;gap:6px">
-        <button onclick="S.resize.mode='fit';render()" style="flex:1;padding:10px;border-radius:16px;font-weight:700;border:2px solid ${s.mode==='fit'?'#c8a96e':'#e0dbd0'};background:${s.mode==='fit'?'#fcf7ef':'#fff'}">📐 等比例</button>
-        <button onclick="S.resize.mode='fill';render()" style="flex:1;padding:10px;border-radius:16px;font-weight:700;border:2px solid ${s.mode==='fill'?'#c8a96e':'#e0dbd0'};background:${s.mode==='fill'?'#fcf7ef':'#fff'}">📏 拉伸</button>
+        <button onclick="S.resize.mode='fit';render()" style="flex:1;padding:10px;border-radius:16px;font-weight:700;border:2px solid ${s.mode==='fit'?'var(--accent)':'var(--border)'};background:${s.mode==='fit'?'var(--accent2)':'#fff'}">📐 等比例</button>
+        <button onclick="S.resize.mode='fill';render()" style="flex:1;padding:10px;border-radius:16px;font-weight:700;border:2px solid ${s.mode==='fill'?'var(--accent)':'var(--border)'};background:${s.mode==='fill'?'var(--accent2)':'#fff'}">📏 拉伸</button>
       </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:12px;color:#888">格式</span>
-        <select onchange="S.resize.fmt=this.selectedIndex;render()" style="padding:8px;border-radius:12px;border:1px solid #e0dbd0">${FORMATS.map(f=>`<option>${f.ext.toUpperCase()}</option>`).join('')}</select>
-        <span style="font-size:12px;color:#888">质量</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--text2)">格式</span>
+        <select onchange="S.resize.fmt=this.selectedIndex;render()" style="padding:8px;border-radius:12px;border:1px solid var(--border)">${FORMATS.map(f=>`<option>${f.ext.toUpperCase()}</option>`).join('')}</select>
+        <span style="font-size:12px;color:var(--text2)">质量</span>
         <input type="range" min="10" max="100" value="${s.q}" oninput="S.resize.q=parseInt(this.value);render()"><span style="font-weight:700">${s.q}%</span>
       </div>
-      <button onclick="resizeProcess()" class="btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>📐 开始调整</button>
-    </div>
-    <div class="card anim" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:300px">
-      ${s.res?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:10px">${s.w}×${s.h}px · ${(s.size/1024).toFixed(1)} KB</div><img src="${s.res}" style="max-width:100%;max-height:60vh;border-radius:16px;margin-bottom:14px"><button onclick="dl(S.resize.blob,'xiuxiutu_resize.'+FORMATS[S.resize.fmt].ext)" class="btn-outline">⬇ 下载</button></div>`
-      :`<div style="text-align:center;color:#aaa"><div style="font-size:48px;margin-bottom:12px">📐</div><div style="font-weight:600">上传图片，设置尺寸，一键调整</div></div>`}
-    </div>
+      <button onclick="resizeProcess()" class="btn btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>📐 开始调整</button>
+    </div>`;
+  const mainContent = `<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">
+    ${s.res?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:10px">${s.w}×${s.h}px · ${(s.size/1024).toFixed(1)} KB</div><img src="${s.res}" style="max-width:100%;max-height:60vh;border-radius:16px;margin-bottom:14px"><button onclick="dl(S.resize.blob,'xiuxiutu_resize.'+FORMATS[S.resize.fmt].ext)" class="btn btn-outline">⬇ 下载</button></div>`
+    :`<div style="text-align:center;color:#aaa"><div style="font-size:48px;margin-bottom:12px">📐</div><div style="font-weight:600">上传图片，设置尺寸，一键调整</div></div>`}
   </div>`;
+  if(m()) return `<div style="display:flex;flex-direction:column;gap:16px;">${sidebarContent}${mainContent}</div>`;
+  return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">${sidebarContent}</div><div style="flex:1">${mainContent}</div></div>`;
 }
 
-// ----- 处理流程 -----
+// ========== 处理逻辑 ==========
 async function idProcess(){
   S.id.phase=2;render();
   let p=S.id.src;
   try{p=await bgReplace(p,BGS[S.id.bg].hex)}catch(e){}
   S.id.proc=p;S.id.phase=3;render();
 }
-
 async function convProcess(){
   const r=await convert(S.conv.src,FORMATS[S.conv.fmt].id,S.conv.q);
   S.conv.res=r.url;S.conv.size=r.size;S.conv.blob=r.blob;render();
 }
-
 async function resizeProcess(){
   const w=parseInt(iw),h=parseInt(ih);
   if(!isNaN(w)&&w>0&&!isNaN(h)&&h>0){S.resize.w=Math.round(w);S.resize.h=Math.round(h)}
