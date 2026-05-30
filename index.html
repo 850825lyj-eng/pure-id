@@ -26,7 +26,6 @@ input[type="range"]{-webkit-appearance:none;width:100%;height:6px;border-radius:
 input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .anim{animation:fadeUp .3s ease}
-/* 卡片 */
 .card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);}
 .btn{display:inline-block;padding:12px 28px;border-radius:30px;font-weight:700;font-size:15px;transition:.2s;text-align:center;}
 .btn-primary{background:linear-gradient(135deg,#d4b87a,#b08d48);color:#fff;box-shadow:0 4px 16px rgba(200,169,110,.3);}
@@ -108,15 +107,17 @@ function load(f,cb){if(!f||!f.type.startsWith('image/'))return;const r=new FileR
 
 // ========== 渲染 ==========
 function App(){
+  const isM = m();
+  const tabs = ['🪪 证件照','🔄 格式转换','📐 尺寸调整'];
   return `<div style="height:100vh;display:flex;flex-direction:column;overflow:hidden">
-    <!-- 顶部 -->
-    <div style="padding:12px 20px 8px;display:flex;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:10px">
+    <!-- 顶部，手机端垂直布局，标签居中 -->
+    <div style="padding:12px 20px 8px;display:flex;align-items:center;justify-content:${isM?'center':'space-between'};flex-direction:${isM?'column':'row'};gap:${isM?'8px':'0'}">
+      <div style="display:flex;align-items:center;gap:10px;${isM?'margin-bottom:4px':''}">
         <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#d4b87a,#b08d48);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">✨</div>
         <div><div style="font-size:20px;font-weight:800">修修图</div><div style="font-size:10px;color:var(--text2)">智能图片工具</div></div>
       </div>
-      <div style="display:flex;gap:6px;background:#fff;border-radius:30px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.03)">
-        ${['🪪 证件照','🔄 格式转换','📐 尺寸调整'].map((t,i)=>`<button onclick="S.tab=${i};render()" style="padding:8px ${m()?12:18}px;border-radius:30px;font-size:13px;font-weight:700;background:${S.tab===i?'var(--accent)':'transparent'};color:${S.tab===i?'#fff':'var(--text2)'}">${m()?t.slice(0,2):t}</button>`).join('')}
+      <div style="display:flex;gap:6px;background:#fff;border-radius:30px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.03);${isM?'justify-content:center':''}">
+        ${tabs.map((t,i)=>`<button onclick="S.tab=${i};render()" style="padding:8px ${isM?16:18}px;border-radius:30px;font-size:${isM?14:13}px;font-weight:700;background:${S.tab===i?'var(--accent)':'transparent'};color:${S.tab===i?'#fff':'var(--text2)'}">${t}</button>`).join('')}
       </div>
     </div>
     <!-- 内容区 -->
@@ -148,7 +149,7 @@ function Id(){
       </div>
       <div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:700">背景色</div>
-        <div style="display:flex;gap:12px">${BGS.map((b,i)=>`<div onclick="S.id.bg=${i};render()" title="${b.label}" style="width:32px;height:32px;border-radius:50%;background:${b.hex};border:2px solid ${S.id.bg===i?'var(--accent)':'var(--border)'};cursor:pointer;box-shadow:${b.hex==='#FFFFFF'?'inset 0 0 0 1px #ddd':'none'}"></div>`).join('')}</div>
+        <div style="display:flex;gap:12px;justify-content:center">${BGS.map((b,i)=>`<div onclick="S.id.bg=${i};render()" title="${b.label}" style="width:32px;height:32px;border-radius:50%;background:${b.hex};border:2px solid ${S.id.bg===i?'var(--accent)':'var(--border)'};cursor:pointer;box-shadow:${b.hex==='#FFFFFF'?'inset 0 0 0 1px #ddd':'none'}"></div>`).join('')}</div>
       </div>
       <button onclick="idProcess()" class="btn btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>${s.phase===3?'🔄 重新生成':'✨ 开始制作'}</button>
     </div>`;
