@@ -57,7 +57,7 @@ const BGS=[
 ];
 const FORMATS=[{id:"image/jpeg",ext:"jpg"},{id:"image/png",ext:"png"},{id:"image/webp",ext:"webp"}];
 
-// ✅ 修复的背景替换函数：简单粗暴但有效，直接在纯色背景上居中放置照片
+// ✅ 新方案：直接在纯色背景上居中放置照片，背景色一定生效
 function bgReplace(src,hex){
   return new Promise((ok,rej)=>{
     const img=new Image();
@@ -66,10 +66,10 @@ function bgReplace(src,hex){
       const c=document.createElement('canvas');
       c.width=W;c.height=H;
       const ctx=c.getContext('2d');
-      // 填充选中的背景色
+      // 铺底色
       ctx.fillStyle=hex;
       ctx.fillRect(0,0,W,H);
-      // 计算图片缩放和位置，使其完全位于画布内并居中
+      // 居中放置照片
       const scale=Math.min(W/img.naturalWidth,H/img.naturalHeight);
       const sw=img.naturalWidth*scale,sh=img.naturalHeight*scale;
       const sx=(W-sw)/2,sy=(H-sh)/2;
@@ -262,7 +262,6 @@ function Resize(){
   return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">${sidebar}</div><div style="flex:1">${main}</div></div>`;
 }
 
-// ✅ 确保处理函数正确传递背景色
 async function idProcess(){
   const hex=BGS[S.id.bg].hex;
   S.id.phase=2;render();
