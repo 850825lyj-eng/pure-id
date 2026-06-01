@@ -1,4 +1,4 @@
-<!-- 修修图·隐私百宝箱 v8.1 · 手机端导航扩展 + 品牌名高亮 -->
+<!-- 修修图·隐私百宝箱 v8.2 · 标题居中+上传区绿色动效边框 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -38,8 +38,10 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
 .btn-danger{background:var(--danger);color:#fff;box-shadow:0 4px 16px rgba(239,68,68,.25)}
 .btn-danger:hover{background:#DC2626;box-shadow:0 8px 24px rgba(239,68,68,.35)}
-.upload-zone{border:2px dashed var(--border);border-radius:var(--r2);padding:36px 20px;text-align:center;cursor:pointer;background:#FAFBFC;transition:.2s}
-.upload-zone:hover{border-color:var(--accent);background:var(--accent-light)}
+/* 上传区：绿色虚线边框 + 呼吸辉光动画 */
+@keyframes uploadGlow{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.15);border-color:#86efac}50%{box-shadow:0 0 0 6px rgba(34,197,94,0);border-color:#4ade80}}
+.upload-zone{border:2px dashed #4ade80;border-radius:var(--r2);padding:36px 20px;text-align:center;cursor:pointer;background:#FAFBFC;transition:.2s;animation:uploadGlow 2.5s ease-in-out infinite}
+.upload-zone:hover{border-color:var(--accent);background:var(--accent-light);animation:none;box-shadow:0 0 0 4px rgba(34,197,94,.1)}
 .tab-btn{padding:9px 22px;border-radius:28px;font-size:14px;font-weight:700;transition:all .25s cubic-bezier(.4,0,.2,1)}
 .tab-btn:hover{transform:translateY(-1px)}
 .tab-btn.active{text-shadow:0 1px 1px rgba(0,0,0,.08)}
@@ -100,15 +102,15 @@ let iw='800',ih='600';const m=()=>window.innerWidth<768;
 
 function load(f,cb){if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>cb(e.target.result);r.readAsDataURL(f)}
 
+// 上传区HTML模板：文字全部居中
 function uploadZoneHTML(icon, toolId, onDropHandler) {
-  return '<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="'+onDropHandler+'" onclick="document.getElementById(\''+toolId+'\').click()">'+
-    '<div style="text-align:center"><div style="font-size:42px;text-align:center">'+icon+'</div></div>'+
+  return '<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="'+onDropHandler+'" onclick="document.getElementById(\''+toolId+'\').click()" style="display:flex;flex-direction:column;align-items:center;justify-content:center">'+
+    '<div style="font-size:42px;text-align:center">'+icon+'</div>'+
     '<div style="text-align:center;font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div>'+
     '<div style="text-align:center;font-size:12px;color:var(--text2);margin-top:4px">100% 本地处理，不上传服务器</div>'+
   '</div>';
 }
 
-// 手机端标签按钮：图标+两行文字
 function mobileTabHTML(icon, word1, word2, index, active) {
   return '<button class="mobile-tab-btn" onclick="S.tab='+index+';render()" style="background:'+(active?'var(--warn)':'transparent')+';color:'+(active?'#fff':'var(--text2)')+'">'+
     '<span class="icon">'+icon+'</span>'+
@@ -126,7 +128,6 @@ function render(){
   ];
   let body='';if(s.tab===0)body=renderPrivacy();else if(s.tab===1)body=renderConv();else body=renderResize();
 
-  // 品牌栏：高亮“隐私百宝箱”
   const brandHTML = '<div style="display:flex;align-items:center;gap:12px;'+(isM?'':'margin-right:auto')+'">'+
     '<div class="shield-icon" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#22C55E,#16A34A);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;box-shadow:0 4px 16px rgba(34,197,94,.35);border:none">🛡️</div>'+
     '<div>'+
@@ -135,7 +136,6 @@ function render(){
     '</div>'+
   '</div>';
 
-  // 导航栏：手机端用等宽撑满布局，电脑端保持原样
   let navHTML;
   if (isM) {
     navHTML = '<div class="mobile-nav">'+
