@@ -1,4 +1,4 @@
-<!-- 修修图 v7.4 · 预览图大小互换 + 绿色按钮 -->
+<!-- 修修图 v7.5 · 预览图等比缩放+左右边框对齐 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -46,8 +46,8 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 .shield-icon{animation:shieldPulse 3s infinite}
 .resize-input{width:80px;padding:10px;border-radius:12px;border:1.5px solid var(--border);font-size:15px;font-weight:700;text-align:center;background:#FAFBFC;flex-shrink:0}
 .resize-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
-/* 左侧预览图缩小 */
-.preview-thumb{width:100%;max-height:120px;object-fit:cover;border-radius:12px;border:2px solid var(--border)}
+/* 左侧预览图等比缩小，不裁剪 */
+.preview-thumb{display:block;max-width:100%;max-height:120px;width:auto;height:auto;border-radius:12px;border:2px solid var(--border);margin:0 auto;object-fit:contain}
 </style>
 </head>
 <body>
@@ -121,11 +121,11 @@ function render(){
 
 function renderPrivacy(){
   const s=S.privacy,up=!s.src,isM=m();
-  const bar='<div class="card" style="display:flex;flex-direction:column;gap:16px">'+
+  const bar='<div class="card" style="flex:1;display:flex;flex-direction:column;gap:16px;overflow-y:auto">'+
     '<div style="font-size:20px;font-weight:700;text-align:center">🛡️ 隐私检测</div>'+
     '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">每张照片都携带着你看不见的元数据——<strong style="color:var(--danger)">GPS 坐标</strong>、<strong style="color:var(--warn)">拍摄时间</strong>、<strong style="color:var(--warn)">设备型号</strong>。分享原图时，这些信息会一并发送。</p>'+
     (up?'<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="event.preventDefault();if(event.dataTransfer.files[0])privacyLoad(event.dataTransfer.files[0])" onclick="document.getElementById(\'fp\').click()"><div style="font-size:42px">🔍</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div><div style="font-size:12px;color:var(--text2);margin-top:4px">100% 本地处理，不上传服务器</div></div>'
-    :'<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="'+s.src+'" class="preview-thumb" style="width:100%"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>')+
+    :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
     '<input id="fp" type="file" accept="image/*" hidden/>'+
     '<button onclick="privacyScan()" class="btn btn-primary" style="width:100%"' + (!s.file?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'') + '>🔍 开始扫描</button>'+
     (s.phase>=2&&s.cleanedBlob?'<button onclick="privacyClean()" class="btn btn-danger" style="width:100%">🧹 清除全部隐私信息</button>':'')+
@@ -174,16 +174,16 @@ function renderPrivacy(){
   main+='</div>';
 
   if(isM)return '<div style="display:flex;flex-direction:column;gap:16px">'+bar+main+'</div>';
-  return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column">'+main+'</div></div>';
+  return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0;display:flex;flex-direction:column;height:100%">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+main+'</div></div>';
 }
 
 function renderConv(){
   const s=S.conv,isM=m();
-  const bar='<div class="card" style="display:flex;flex-direction:column;gap:16px">'+
+  const bar='<div class="card" style="flex:1;display:flex;flex-direction:column;gap:16px;overflow-y:auto">'+
     '<div style="font-size:20px;font-weight:700;text-align:center">🔄 格式转换</div>'+
     '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">在 JPG、PNG、WebP 之间自由转换，调节压缩质量，所有处理都在本地完成。</p>'+
     (!s.src?'<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="event.preventDefault();if(event.dataTransfer.files[0])load(event.dataTransfer.files[0],r=>{S.conv.src=r;S.conv.res=null;render()})" onclick="document.getElementById(\'f2\').click()"><div style="font-size:42px">🖼️</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div></div>'
-    :'<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="'+s.src+'" class="preview-thumb" style="width:100%"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>')+
+    :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
     '<input id="f2" type="file" accept="image/*" hidden/>'+
     '<div style="display:flex;gap:8px">'+FMT.map((f,i)=>'<button onclick="S.conv.fmt='+i+';render()" style="flex:1;padding:14px;border-radius:16px;font-weight:700;font-size:16px;border:2px solid '+(s.fmt===i?'var(--accent)':'var(--border)')+';background:'+(s.fmt===i?'var(--accent-light)':'#fff')+';transition:all .2s;color:'+(s.fmt===i?'var(--accent)':'var(--text2)')+'">.'+f.ext.toUpperCase()+'</button>').join('')+'</div>'+
     '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2)">压缩质量</span><input type="range" min="10" max="100" value="'+s.q+'" oninput="S.conv.q=parseInt(this.value);render()"><span style="font-weight:700;font-size:15px;min-width:40px;color:var(--accent)">'+s.q+'%</span></div>'+
@@ -192,16 +192,16 @@ function renderConv(){
     (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">转换完成 · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" style="max-width:90%;max-height:65vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin-bottom:16px;border:2px solid var(--border);display:block;margin-left:auto;margin-right:auto"></div><button onclick="dl(S.conv.blob,\'xiuxiutu.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
     :'<div style="text-align:center;color:var(--text2)"><div style="font-size:56px;margin-bottom:16px">🔄</div><div style="font-weight:600;font-size:16px">上传图片，选择格式，一键转换</div><div style="font-size:12px;margin-top:6px">支持 JPG · PNG · WebP 互转</div></div>')+'</div>';
   if(isM)return '<div style="display:flex;flex-direction:column;gap:16px">'+bar+main+'</div>';
-  return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column">'+main+'</div></div>';
+  return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0;display:flex;flex-direction:column;height:100%">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+main+'</div></div>';
 }
 
 function renderResize(){
   const s=S.resize,isM=m();
-  const bar='<div class="card" style="display:flex;flex-direction:column;gap:16px">'+
+  const bar='<div class="card" style="flex:1;display:flex;flex-direction:column;gap:16px;overflow-y:auto">'+
     '<div style="font-size:20px;font-weight:700;text-align:center">📐 尺寸调整</div>'+
     '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">精确调整图片尺寸，支持等比例缩放或拉伸填充，选格式、调质量，一步到位。</p>'+
     (!s.src?'<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="event.preventDefault();if(event.dataTransfer.files[0]){const file=event.dataTransfer.files[0];load(file,r=>{const img=new Image();img.onload=()=>{iw=String(img.naturalWidth);ih=String(img.naturalHeight);S.resize.src=r;S.resize.w=img.naturalWidth;S.resize.h=img.naturalHeight;S.resize.res=null;render()};img.src=r})}" onclick="document.getElementById(\'f3\').click()"><div style="font-size:42px">📐</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div></div>'
-    :'<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="'+s.src+'" class="preview-thumb" style="width:100%"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>')+
+    :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
     '<input id="f3" type="file" accept="image/*" hidden/>'+
     '<div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap">'+
       '<span style="font-size:12px;color:var(--text2);flex-shrink:0">宽</span>'+
@@ -218,7 +218,7 @@ function renderResize(){
     (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">'+s.w+' × '+s.h+' px · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" style="max-width:90%;max-height:65vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin-bottom:16px;border:2px solid var(--border);display:block;margin-left:auto;margin-right:auto"></div><button onclick="dl(S.resize.blob,\'xiuxiutu_resize.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
     :'<div style="text-align:center;color:var(--text2)"><div style="font-size:56px;margin-bottom:16px">📐</div><div style="font-weight:600;font-size:16px">上传图片，设置尺寸，一键调整</div><div style="font-size:12px;margin-top:6px">支持等比例缩放 · 拉伸填充 · 格式转换</div></div>')+'</div>';
   if(isM)return '<div style="display:flex;flex-direction:column;gap:16px">'+bar+main+'</div>';
-  return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column">'+main+'</div></div>';
+  return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0;display:flex;flex-direction:column;height:100%">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+main+'</div></div>';
 }
 
 async function privacyLoad(file){if(!file||!file.type.startsWith('image/'))return;const r=new FileReader();r.onload=function(e){S.privacy.src=e.target.result;S.privacy.file=file;S.privacy.phase=1;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()};r.readAsDataURL(file)}
