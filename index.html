@@ -1,4 +1,4 @@
-<!-- version: 5.0.0 - Exif 隐私检测与清除 -->
+<!-- version: 5.0.1 - Exif 隐私检测与清除 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -20,12 +20,6 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 .btn{display:inline-block;padding:12px 28px;border-radius:30px;font-weight:700;font-size:15px;transition:.2s;text-align:center}
 .btn-primary{background:linear-gradient(135deg,#d4b87a,#b08d48);color:#fff;box-shadow:0 4px 16px rgba(200,169,110,.3)}
 .btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--text2)}
-.doc-card{cursor:pointer;padding:12px;border-radius:var(--r2);border:2px solid transparent;background:var(--bg);transition:.2s;display:flex;flex-direction:column;gap:4px}
-.doc-card:hover{border-color:var(--accent)}
-.doc-card.selected{border-color:var(--accent);background:var(--accent2)}
-.doc-card .flag{font-size:24px}
-.doc-card .name{font-weight:700;font-size:13px}
-.doc-card .info{font-size:10px;color:var(--text2)}
 .upload-zone{border:2px dashed var(--border);border-radius:var(--r2);padding:36px 20px;text-align:center;cursor:pointer;background:#fdfcf9;transition:.2s}
 .upload-zone:hover{border-color:var(--accent);background:#fdf8f0}
 </style>
@@ -33,177 +27,68 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 <body>
 <div id="root"></div>
 <script>
-// ========== 真正的 EXIF 读取 ==========
+// ========== EXIF 读取（使用 exifr CDN） ==========
 function readExif(file) {
-  return new Promise((resolve, reject) => {
-    // 使用 exifr 库（通过 CDN 加载，纯 JS，无需 npm）
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/lite.umd.js';
-    script.onload = async () => {
-      try {
-        // exifr 支持直接读取文件，可获取 GPS、拍摄时间、相机型号等信息
-        const data = await exifr.parse(file, {
-          gps: true,
-          tiff: true,
-          iptc: true,
-          xmp: true,
-          icc: true,
-        });
-        
-        if (!data) {
-          resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low' });
-          return;
-        }
-
-        const info = [];
-        let hasGPS = false;
-        let hasCamera = false;
-        let hasDateTime = false;
-
-        // GPS 信息（真实可读的坐标）
-        if (data.latitude && data.longitude) {
-          hasGPS = true;
-          info.push({
-            name: '📍 GPS 位置',
-            value: `${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}`,
-            risk: 'high',
-            detail: '任何人都能通过这些坐标定位到你的拍摄地点'
-          });
-          if (data.GPSAltitude) {
-            info.push({
-              name: '🏔️ 海拔高度',
-              value: `${data.GPSAltitude.toFixed(1)} 米`,
-              risk: 'medium',
-              detail: '包含拍摄时的海拔信息'
-            });
-          }
-        }
-
-        // 拍摄时间
-        if (data.DateTimeOriginal) {
-          hasDateTime = true;
-          info.push({
-            name: '📅 拍摄时间',
-            value: typeof data.DateTimeOriginal === 'string' 
-              ? data.DateTimeOriginal 
-              : data.DateTimeOriginal.toISOString(),
-            risk: 'medium',
-            detail: '包含精确的拍摄日期和时间'
-          });
-        }
-
-        // 相机信息
-        if (data.Make || data.Model) {
-          hasCamera = true;
-          const camera = [data.Make, data.Model].filter(Boolean).join(' ');
-          info.push({
-            name: '📷 拍摄设备',
-            value: camera || '未知',
-            risk: 'medium',
-            detail: '包含相机品牌、型号等信息'
-          });
-        }
-
-        // 镜头信息
-        if (data.LensModel) {
-          info.push({
-            name: '🔍 镜头型号',
-            value: data.LensModel,
-            risk: 'low',
-            detail: '包含使用的镜头信息'
-          });
-        }
-
-        // 拍摄参数
-        if (data.FNumber) {
-          info.push({
-            name: '⚙️ 光圈',
-            value: `f/${data.FNumber}`,
-            risk: 'low',
-            detail: '包含光圈设置'
-          });
-        }
-        if (data.ExposureTime) {
-          info.push({
-            name: '⏱️ 快门速度',
-            value: data.ExposureTime < 1 
-              ? `1/${Math.round(1/data.ExposureTime)} 秒` 
-              : `${data.ExposureTime} 秒`,
-            risk: 'low',
-            detail: '包含快门速度'
-          });
-        }
-        if (data.ISO) {
-          info.push({
-            name: '💡 ISO',
-            value: `ISO ${data.ISO}`,
-            risk: 'low',
-            detail: '包含感光度设置'
-          });
-        }
-
-        // 照片尺寸
-        if (data.ImageWidth && data.ImageHeight) {
-          info.push({
-            name: '📐 分辨率',
-            value: `${data.ImageWidth} × ${data.ImageHeight} px`,
-            risk: 'low',
-            detail: '原始照片的像素尺寸'
-          });
-        }
-
-        // 软件信息
-        if (data.Software) {
-          info.push({
-            name: '🖥️ 处理软件',
-            value: data.Software,
-            risk: 'low',
-            detail: '包含后期处理软件的版本信息'
-          });
-        }
-
-        // 风险等级
-        let riskLevel = 'low';
-        if (hasGPS) riskLevel = 'high';
-        else if (hasCamera || hasDateTime) riskLevel = 'medium';
-
-        resolve({ info, hasGPS, hasCamera, riskLevel });
-      } catch (err) {
-        console.error('EXIF 读取失败:', err);
-        resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low' });
-      }
-    };
-    script.onerror = () => {
-      resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low' });
-    };
-    document.head.appendChild(script);
+  return new Promise((resolve) => {
+    if (typeof exifr === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/lite.umd.js';
+      script.onload = () => doParse(file, resolve);
+      script.onerror = () => resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low' });
+      document.head.appendChild(script);
+    } else {
+      doParse(file, resolve);
+    }
   });
 }
 
-// ========== 真正的隐私信息清除 ==========
+async function doParse(file, resolve) {
+  try {
+    const data = await exifr.parse(file, { gps: true, tiff: true, iptc: true, xmp: true, icc: true });
+    if (!data) { resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low' }); return; }
+    const info = [];
+    let hasGPS = false, hasCamera = false;
+    if (data.latitude && data.longitude) {
+      hasGPS = true;
+      info.push({ name: '📍 GPS 位置', value: data.latitude.toFixed(4) + ', ' + data.longitude.toFixed(4), risk: 'high', detail: '任何人都能通过这些坐标定位到你的拍摄地点' });
+    }
+    if (data.DateTimeOriginal) {
+      const dt = typeof data.DateTimeOriginal === 'string' ? data.DateTimeOriginal : data.DateTimeOriginal.toISOString();
+      info.push({ name: '📅 拍摄时间', value: dt, risk: 'medium', detail: '包含精确的拍摄日期和时间' });
+    }
+    if (data.Make || data.Model) {
+      hasCamera = true;
+      info.push({ name: '📷 拍摄设备', value: [data.Make, data.Model].filter(Boolean).join(' ') || '未知', risk: 'medium', detail: '包含相机品牌、型号等信息' });
+    }
+    if (data.LensModel) { info.push({ name: '🔍 镜头型号', value: data.LensModel, risk: 'low', detail: '包含使用的镜头信息' }); }
+    if (data.FNumber) { info.push({ name: '⚙️ 光圈', value: 'f/' + data.FNumber, risk: 'low', detail: '包含光圈设置' }); }
+    if (data.ExposureTime) { info.push({ name: '⏱️ 快门速度', value: data.ExposureTime < 1 ? '1/' + Math.round(1/data.ExposureTime) + ' 秒' : data.ExposureTime + ' 秒', risk: 'low', detail: '包含快门速度' }); }
+    if (data.ISO) { info.push({ name: '💡 ISO', value: 'ISO ' + data.ISO, risk: 'low', detail: '包含感光度设置' }); }
+    if (data.ImageWidth && data.ImageHeight) { info.push({ name: '📐 分辨率', value: data.ImageWidth + ' × ' + data.ImageHeight + ' px', risk: 'low', detail: '原始照片的像素尺寸' }); }
+    if (data.Software) { info.push({ name: '🖥️ 处理软件', value: data.Software, risk: 'low', detail: '包含后期处理软件的版本信息' }); }
+    let riskLevel = 'low';
+    if (hasGPS) riskLevel = 'high';
+    else if (hasCamera || info.some(i => i.name === '📅 拍摄时间')) riskLevel = 'medium';
+    resolve({ info, hasGPS, hasCamera, riskLevel });
+  } catch (e) {
+    resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low' });
+  }
+}
+
+// ========== 清除 EXIF（Canvas 重绘） ==========
 function clearExif(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        // 将图片绘制到 Canvas 上，再导出
-        // 这个过程会彻底剥离所有元数据
         const canvas = document.createElement('canvas');
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
-        
         canvas.toBlob((blob) => {
-          const url = URL.createObjectURL(blob);
-          resolve({
-            url,
-            blob,
-            size: blob.size,
-            width: canvas.width,
-            height: canvas.height
-          });
+          resolve({ url: URL.createObjectURL(blob), blob: blob, size: blob.size, width: canvas.width, height: canvas.height });
         }, file.type || 'image/jpeg', 0.95);
       };
       img.onerror = () => reject(new Error('图片加载失败'));
@@ -216,14 +101,33 @@ function clearExif(file) {
 
 function dl(blob, name) {
   const u = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = u; a.download = name; a.click();
+  const a = document.createElement('a'); a.href = u; a.download = name; a.click();
   URL.revokeObjectURL(u);
 }
 
-const FMT = [{id:"image/jpeg",ext:"jpg"},{id:"image/png",ext:"png"},{id:"image/webp",ext:"webp"}];
+function convert(src, fmt, q) { return new Promise((ok) => {
+  const img = new Image(); img.onload = () => {
+    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    c.toBlob(b => ok({ url: URL.createObjectURL(b), blob: b, size: b.size }), fmt, q/100);
+  }; img.src = src;
+}); }
 
-// ========== 状态管理 ==========
+function resizeImg(src, w, h, fmt, q, mode) { return new Promise((ok) => {
+  const img = new Image(); img.onload = () => {
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const ctx = c.getContext('2d');
+    if (mode === 'fill') { ctx.drawImage(img, 0, 0, w, h); } else {
+      const r = img.naturalWidth / img.naturalHeight, tr = w / h; let dw, dh, ox, oy;
+      if (r > tr) { dw = w; dh = w / r; ox = 0; oy = (h - dh) / 2; }
+      else { dh = h; dw = h * r; ox = (w - dw) / 2; oy = 0; }
+      ctx.fillStyle = '#FFF'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, ox, oy, dw, dh);
+    }
+    c.toBlob(b => ok({ url: URL.createObjectURL(b), blob: b, size: b.size, w, h }), fmt, q/100);
+  }; img.src = src;
+}); }
+
+const FMT = [{ id: "image/jpeg", ext: "jpg" }, { id: "image/png", ext: "png" }, { id: "image/webp", ext: "webp" }];
+
 let S = {
   tab: 0,
   privacy: { phase: 0, file: null, src: null, exif: null, cleanedBlob: null },
@@ -240,102 +144,137 @@ function load(f, cb) {
   r.readAsDataURL(f);
 }
 
-// ========== 渲染 ==========
-function App() {
+function render() {
   const isM = m();
   const tabs = ['🛡️ 隐私检测', '🔄 格式转换', '📐 尺寸调整'];
-  return `<div style="height:100vh;display:flex;flex-direction:column;overflow:hidden">
-    <div style="padding:12px 20px 8px;display:flex;align-items:center;justify-content:${isM?'center':'space-between'};flex-direction:${isM?'column':'row'};gap:${isM?'8px':'0'}">
-      <div style="display:flex;align-items:center;gap:10px;${isM?'margin-bottom:4px':''}">
-        <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#d4b87a,#b08d48);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">🛡️</div>
-        <div><div style="font-size:20px;font-weight:800">修修图</div><div style="font-size:10px;color:var(--text2)">隐私保护工具</div></div>
-      </div>
-      <div style="display:flex;gap:6px;background:#fff;border-radius:30px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.03);${isM?'justify-content:center':''}">
-        ${tabs.map((t,i)=>`<button onclick="S.tab=${i};render()" style="padding:8px ${isM?16:18}px;border-radius:30px;font-size:${isM?14:13}px;font-weight:700;background:${S.tab===i?'var(--accent)':'transparent'};color:${S.tab===i?'#fff':'var(--text2)'}">${t}</button>`).join('')}
-      </div>
-    </div>
-    <div style="flex:1;overflow:auto;padding:0 16px 16px">${S.tab===0?Privacy():S.tab===1?Conv():Resize()}</div>
-  </div>`;
+  const s = S;
+  let bodyContent = '';
+  if (s.tab === 0) bodyContent = renderPrivacy();
+  else if (s.tab === 1) bodyContent = renderConv();
+  else bodyContent = renderResize();
+
+  document.getElementById('root').innerHTML = '<div style="height:100vh;display:flex;flex-direction:column;overflow:hidden">' +
+    '<div style="padding:12px 20px 8px;display:flex;align-items:center;justify-content:' + (isM ? 'center' : 'space-between') + ';flex-direction:' + (isM ? 'column' : 'row') + ';gap:' + (isM ? '8px' : '0') + '">' +
+      '<div style="display:flex;align-items:center;gap:10px;' + (isM ? 'margin-bottom:4px' : '') + '">' +
+        '<div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#d4b87a,#b08d48);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">🛡️</div>' +
+        '<div><div style="font-size:20px;font-weight:800">修修图</div><div style="font-size:10px;color:#6b6b6b">隐私保护工具</div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;background:#fff;border-radius:30px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.03);' + (isM ? 'justify-content:center' : '') + '">' +
+        tabs.map((t, i) => '<button onclick="S.tab=' + i + ';render()" style="padding:8px ' + (isM ? 16 : 18) + 'px;border-radius:30px;font-size:' + (isM ? 14 : 13) + 'px;font-weight:700;background:' + (s.tab === i ? '#c8a96e' : 'transparent') + ';color:' + (s.tab === i ? '#fff' : '#6b6b6b') + '">' + t + '</button>').join('') +
+      '</div>' +
+    '</div>' +
+    '<div style="flex:1;overflow:auto;padding:0 16px 16px">' + bodyContent + '</div>' +
+  '</div>';
+
+  // 绑定事件
+  setTimeout(() => {
+    const fp = document.getElementById('fp');
+    const f2 = document.getElementById('f2');
+    const f3 = document.getElementById('f3');
+    if (fp) fp.onchange = function() { if (this.files[0]) privacyLoad(this.files[0]); };
+    if (f2) f2.onchange = function() { if (this.files[0]) load(this.files[0], r => { S.conv.src = r; S.conv.res = null; render(); }); };
+    if (f3) f3.onchange = function() {
+      if (this.files[0]) load(this.files[0], r => {
+        const img = new Image(); img.onload = () => { iw = String(img.naturalWidth); ih = String(img.naturalHeight); S.resize.src = r; S.resize.w = img.naturalWidth; S.resize.h = img.naturalHeight; S.resize.res = null; render(); }; img.src = r;
+      });
+    };
+  }, 50);
 }
 
-// ========== 隐私检测模块 ==========
-function Privacy() {
+function renderPrivacy() {
   const s = S.privacy;
   const up = !s.src;
+  const isM = m();
   
-  const bar = `
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div style="font-size:20px;font-weight:700">🛡️ 隐私检测与清除</div>
-      ${up ? `<div class="upload-zone" onclick="document.getElementById('fp').click()">
-        <div style="font-size:42px">🔍</div>
-        <div style="font-weight:600;margin-top:8px">点击上传照片</div>
-        <div style="font-size:12px;color:#999;margin-top:4px">检测照片中隐藏的隐私信息</div>
-      </div>`
-      : `<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="${s.src}" style="width:100%"></div>
-         <button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>`}
-      <input id="fp" type="file" accept="image/*" hidden onchange="if(this.files[0])privacyLoad(this.files[0])"/>
-      <button onclick="privacyScan()" class="btn btn-primary" ${!s.file?'disabled style="opacity:.4"':''}>🔍 扫描隐私信息</button>
-      ${s.phase >= 2 && s.cleanedBlob ? `<button onclick="privacyClean()" class="btn btn-outline" style="width:100%">🧹 清除隐私信息并下载安全版本</button>` : ''}
-    </div>`;
+  const bar = '<div style="display:flex;flex-direction:column;gap:16px">' +
+    '<div style="font-size:20px;font-weight:700">🛡️ 隐私检测与清除</div>' +
+    (up ? '<div class="upload-zone" onclick="document.getElementById(\'fp\').click()"><div style="font-size:42px">🔍</div><div style="font-weight:600;margin-top:8px">点击上传照片</div><div style="font-size:12px;color:#999;margin-top:4px">检测照片中隐藏的隐私信息</div></div>'
+    : '<div style="border-radius:18px;overflow:hidden;border:2px solid #e8e5e0"><img src="' + s.src + '" style="width:100%"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:#6b6b6b;text-decoration:underline;align-self:flex-start">重新选择</button>') +
+    '<input id="fp" type="file" accept="image/*" hidden/>' +
+    '<button onclick="privacyScan()" class="btn btn-primary"' + (!s.file ? ' disabled style="opacity:.4"' : '') + '>🔍 扫描隐私信息</button>' +
+    (s.phase >= 2 && s.cleanedBlob ? '<button onclick="privacyClean()" class="btn btn-outline" style="width:100%">🧹 清除隐私信息并下载安全版本</button>' : '') +
+    '</div>';
 
-  const main = `
-    <div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">
-      ${s.phase === 0 ? `<div style="text-align:center;color:#aaa"><div style="font-size:64px;margin-bottom:12px">🛡️</div><div style="font-weight:600;font-size:16px">上传照片，检测隐藏的隐私信息</div><div style="font-size:12px;margin-top:6px">100% 本地处理，不上传服务器</div></div>`
-      : s.phase === 1 ? `<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto"><img src="${s.src}" style="width:100%"></div></div>`
-      : s.phase === 2 && s.exif ? `<div style="width:100%">
-        <div style="font-weight:700;margin-bottom:16px;text-align:center">🔍 隐私扫描结果</div>
-        
-        <!-- 风险等级 -->
-        <div style="text-align:center;margin-bottom:16px">
-          <span style="display:inline-block;padding:8px 24px;border-radius:30px;font-size:16px;font-weight:800;background:${s.exif.riskLevel==='high'?'#FEF0F0':(s.exif.riskLevel==='medium'?'#FFF8EC':'#EDF7F2')};color:${s.exif.riskLevel==='high'?'#B03030':(s.exif.riskLevel==='medium'?'#A06A00':'#1A7F45')}">
-            ${s.exif.riskLevel==='high'?'🔴 高风险':(s.exif.riskLevel==='medium'?'🟡 中风险':'🟢 低风险')}
-          </span>
-          ${s.exif.hasGPS ? `<div style="font-size:13px;color:#B03030;margin-top:8px;font-weight:600">⚠️ 这张照片包含 GPS 坐标，发布后可能暴露你的位置</div>` : ''}
-        </div>
+  let main = '<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">';
+  
+  if (s.phase === 0) {
+    main += '<div style="text-align:center;color:#aaa"><div style="font-size:64px;margin-bottom:12px">🛡️</div><div style="font-weight:600;font-size:16px">上传照片，检测隐藏的隐私信息</div><div style="font-size:12px;margin-top:6px">100% 本地处理，不上传服务器</div></div>';
+  } else if (s.phase === 1) {
+    main += '<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto"><img src="' + s.src + '" style="width:100%"></div></div>';
+  } else if (s.phase === 2 && s.exif) {
+    main += '<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">🔍 隐私扫描结果</div>';
+    const riskColors = { high: '#FEF0F0', medium: '#FFF8EC', low: '#EDF7F2' };
+    const riskTextColors = { high: '#B03030', medium: '#A06A00', low: '#1A7F45' };
+    const riskLabels = { high: '🔴 高风险', medium: '🟡 中风险', low: '🟢 低风险' };
+    main += '<div style="text-align:center;margin-bottom:16px"><span style="display:inline-block;padding:8px 24px;border-radius:30px;font-size:16px;font-weight:800;background:' + riskColors[s.exif.riskLevel] + ';color:' + riskTextColors[s.exif.riskLevel] + '">' + riskLabels[s.exif.riskLevel] + '</span>';
+    if (s.exif.hasGPS) main += '<div style="font-size:13px;color:#B03030;margin-top:8px;font-weight:600">⚠️ 这张照片包含 GPS 坐标，发布后可能暴露你的位置</div>';
+    main += '</div>';
+    
+    if (s.exif.info.length > 0) {
+      main += '<div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,.04);margin-bottom:16px"><div style="display:grid;gap:8px">';
+      s.exif.info.forEach(function(item) {
+        const riskBg = item.risk === 'high' ? '#FEF0F0' : (item.risk === 'medium' ? '#FFF8EC' : '#F9FAFB');
+        const riskBorder = item.risk === 'high' ? '#F5C6C6' : (item.risk === 'medium' ? '#F0D9A0' : '#E5E7EB');
+        const riskColor = item.risk === 'high' ? '#B03030' : (item.risk === 'medium' ? '#A06A00' : '#1A7F45');
+        main += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:' + riskBg + ';border:1px solid ' + riskBorder + '">' +
+          '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">' + item.name + '</div><div style="font-size:14px;font-weight:600;color:#c8a96e;margin-top:2px">' + item.value + '</div><div style="font-size:10px;color:#6b6b6b;margin-top:2px">' + item.detail + '</div></div>' +
+          '<span style="font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;background:' + riskColor + ';color:#fff;flex-shrink:0">' + (item.risk === 'high' ? '高风险' : (item.risk === 'medium' ? '中风险' : '一般')) + '</span></div>';
+      });
+      main += '</div></div>';
+    } else {
+      main += '<div style="text-align:center;padding:30px;color:#6b6b6b">🎉 这张照片未检测到明显隐私信息</div>';
+    }
+    main += '<div style="text-align:center;font-size:12px;color:#6b6b6b">点击左下角"清除隐私信息"按钮，生成不含任何元数据的安全版本</div></div>';
+  } else if (s.phase === 3 && s.cleanedBlob) {
+    main += '<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">✅ 隐私信息已清除</div>' +
+      '<div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto 16px"><img src="' + s.cleanedBlob.url + '" style="width:100%;display:block"></div>' +
+      '<div style="text-align:center;margin-bottom:12px"><span style="display:inline-block;padding:6px 18px;border-radius:20px;background:#EDF7F2;color:#1A7F45;font-size:13px;font-weight:700">✅ 安全版本已生成</span></div>' +
+      '<div style="text-align:center;font-size:12px;color:#6b6b6b;margin-bottom:16px">原始大小：' + (s.file.size/1024).toFixed(1) + ' KB → 安全版本：' + (s.cleanedBlob.size/1024).toFixed(1) + ' KB</div>' +
+      '<div style="text-align:center"><button onclick="dl(S.privacy.cleanedBlob,\'safe_' + s.file.name + '\')" class="btn btn-outline">⬇ 下载安全版本</button></div></div>';
+  }
+  main += '</div>';
 
-        ${s.exif.info.length > 0 ? `
-          <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,.04);margin-bottom:16px">
-            <div style="display:grid;gap:8px">
-              ${s.exif.info.map(item => `
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:${item.risk==='high'?'#FEF0F0':(item.risk==='medium'?'#FFF8EC':'#F9FAFB')};border:1px solid ${item.risk==='high'?'#F5C6C6':(item.risk==='medium'?'#F0D9A0':'#E5E7EB')}">
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:13px;font-weight:700;color:var(--text)">${item.name}</div>
-                    <div style="font-size:14px;font-weight:600;color:${item.risk==='high'?'#B03030':'var(--accent)'};margin-top:2px">${item.value}</div>
-                    <div style="font-size:10px;color:var(--text2);margin-top:2px">${item.detail}</div>
-                  </div>
-                  <span style="font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;background:${item.risk==='high'?'#B03030':(item.risk==='medium'?'#A06A00':'#1A7F45')};color:#fff;flex-shrink:0">${item.risk==='high'?'高风险':(item.risk==='medium'?'中风险':'一般')}</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        ` : `<div style="text-align:center;padding:30px;color:var(--text2)">🎉 这张照片未检测到明显隐私信息</div>`}
-        
-        <div style="text-align:center;font-size:12px;color:var(--text2)">点击左下角"清除隐私信息"按钮，生成不含任何元数据的安全版本</div>
-      </div>` : ''
-      : s.phase === 3 && s.cleanedBlob ? `<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">✅ 隐私信息已清除</div>
-        <div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto 16px">
-          <img src="${s.cleanedBlob.url}" style="width:100%;display:block">
-        </div>
-        <div style="text-align:center;margin-bottom:12px">
-          <span style="display:inline-block;padding:6px 18px;border-radius:20px;background:#EDF7F2;color:#1A7F45;font-size:13px;font-weight:700">✅ 安全版本已生成</span>
-        </div>
-        <div style="text-align:center;font-size:12px;color:var(--text2);margin-bottom:16px">
-          原始大小：${(s.file.size/1024).toFixed(1)} KB → 安全版本：${(s.cleanedBlob.size/1024).toFixed(1)} KB
-        </div>
-        <div style="text-align:center">
-          <button onclick="dl(S.privacy.cleanedBlob,'safe_'+S.privacy.file.name)" class="btn btn-outline">⬇ 下载安全版本</button>
-        </div>
-      </div>` : ''}
-    </div>`;
+  if (isM) return '<div style="display:flex;flex-direction:column;gap:16px;">' + bar + main + '</div>';
+  return '<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:340px;flex-shrink:0;overflow-y:auto;max-height:100%">' + bar + '</div><div style="flex:1;min-width:0">' + main + '</div></div>';
+}
 
-  if (m()) return `<div style="display:flex;flex-direction:column;gap:16px;">${bar}${main}</div>`;
-  return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:340px;flex-shrink:0;overflow-y:auto;max-height:100%">${bar}</div><div style="flex:1;min-width:0">${main}</div></div>`;
+function renderConv() {
+  const s = S.conv; const isM = m();
+  const bar = '<div style="display:flex;flex-direction:column;gap:16px"><div style="font-size:20px;font-weight:700">🔄 格式转换</div>' +
+    (!s.src ? '<div class="upload-zone" onclick="document.getElementById(\'f2\').click()"><div style="font-size:42px">🖼️</div><div style="font-weight:600;margin-top:8px">点击上传图片</div></div>'
+    : '<div style="border-radius:18px;overflow:hidden"><img src="' + s.src + '" style="width:100%"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:#6b6b6b;text-decoration:underline;align-self:flex-start">重选</button>') +
+    '<input id="f2" type="file" accept="image/*" hidden/>' +
+    '<div style="display:flex;gap:8px">' + FMT.map((f, i) => '<button onclick="S.conv.fmt=' + i + ';render()" style="flex:1;padding:12px;border-radius:16px;font-weight:700;border:2px solid ' + (s.fmt === i ? '#c8a96e' : '#e8e5e0') + ';background:' + (s.fmt === i ? '#f5efe4' : '#fff') + '">' + f.ext.toUpperCase() + '</button>').join('') + '</div>' +
+    '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:#6b6b6b">质量</span><input type="range" min="10" max="100" value="' + s.q + '" oninput="S.conv.q=parseInt(this.value);render()"><span style="font-weight:700">' + s.q + '%</span></div>' +
+    '<button onclick="convProcess()" class="btn btn-primary"' + (!s.src ? ' disabled style="opacity:.4"' : '') + '>🔄 开始转换</button></div>';
+  const main = '<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">' +
+    (s.res ? '<div style="text-align:center"><div style="font-weight:600;margin-bottom:10px">转换完成 · ' + (s.size/1024).toFixed(1) + ' KB</div><img src="' + s.res + '" style="max-width:100%;max-height:60vh;border-radius:16px;margin-bottom:14px"><button onclick="dl(S.conv.blob,\'xiuxiutu.' + FMT[s.fmt].ext + '\')" class="btn btn-outline">⬇ 下载</button></div>'
+    : '<div style="text-align:center;color:#aaa"><div style="font-size:48px;margin-bottom:12px">🔄</div><div style="font-weight:600">上传图片，选择格式，一键转换</div></div>') + '</div>';
+  if (isM) return '<div style="display:flex;flex-direction:column;gap:16px;">' + bar + main + '</div>';
+  return '<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">' + bar + '</div><div style="flex:1">' + main + '</div></div>';
+}
+
+function renderResize() {
+  const s = S.resize; const isM = m();
+  const bar = '<div style="display:flex;flex-direction:column;gap:16px"><div style="font-size:20px;font-weight:700">📐 尺寸调整</div>' +
+    (!s.src ? '<div class="upload-zone" onclick="document.getElementById(\'f3\').click()"><div style="font-size:42px">📐</div><div style="font-weight:600;margin-top:8px">点击上传图片</div></div>'
+    : '<div style="border-radius:18px;overflow:hidden"><img src="' + s.src + '" style="width:100%"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:#6b6b6b;text-decoration:underline;align-self:flex-start">重选</button>') +
+    '<input id="f3" type="file" accept="image/*" hidden/>' +
+    '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:12px;color:#6b6b6b">宽</span><input type="number" value="' + iw + '" oninput="iw=this.value" style="width:70px;padding:8px;border-radius:12px;border:1.5px solid #e8e5e0;font-size:14px;font-weight:700;text-align:center"><span>×</span><span style="font-size:12px;color:#6b6b6b">高</span><input type="number" value="' + ih + '" oninput="ih=this.value" style="width:70px;padding:8px;border-radius:12px;border:1.5px solid #e8e5e0;font-size:14px;font-weight:700;text-align:center"><span style="font-size:10px;color:#aaa">当前' + s.w + '×' + s.h + '</span></div>' +
+    '<div style="display:flex;gap:6px"><button onclick="S.resize.mode=\'fit\';render()" style="flex:1;padding:10px;border-radius:16px;font-weight:700;border:2px solid ' + (s.mode === 'fit' ? '#c8a96e' : '#e8e5e0') + ';background:' + (s.mode === 'fit' ? '#f5efe4' : '#fff') + '">📐 等比例</button><button onclick="S.resize.mode=\'fill\';render()" style="flex:1;padding:10px;border-radius:16px;font-weight:700;border:2px solid ' + (s.mode === 'fill' ? '#c8a96e' : '#e8e5e0') + ';background:' + (s.mode === 'fill' ? '#f5efe4' : '#fff') + '">📏 拉伸</button></div>' +
+    '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:12px;color:#6b6b6b">格式</span><select onchange="S.resize.fmt=this.selectedIndex;render()" style="padding:8px;border-radius:12px;border:1px solid #e8e5e0">' + FMT.map(f => '<option>' + f.ext.toUpperCase() + '</option>').join('') + '</select><span style="font-size:12px;color:#6b6b6b">质量</span><input type="range" min="10" max="100" value="' + s.q + '" oninput="S.resize.q=parseInt(this.value);render()"><span style="font-weight:700">' + s.q + '%</span></div>' +
+    '<button onclick="resizeProcess()" class="btn btn-primary"' + (!s.src ? ' disabled style="opacity:.4"' : '') + '>📐 开始调整</button></div>';
+  const main = '<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">' +
+    (s.res ? '<div style="text-align:center"><div style="font-weight:600;margin-bottom:10px">' + s.w + '×' + s.h + 'px · ' + (s.size/1024).toFixed(1) + ' KB</div><img src="' + s.res + '" style="max-width:100%;max-height:60vh;border-radius:16px;margin-bottom:14px"><button onclick="dl(S.resize.blob,\'xiuxiutu_resize.' + FMT[s.fmt].ext + '\')" class="btn btn-outline">⬇ 下载</button></div>'
+    : '<div style="text-align:center;color:#aaa"><div style="font-size:48px;margin-bottom:12px">📐</div><div style="font-weight:600">上传图片，设置尺寸，一键调整</div></div>') + '</div>';
+  if (isM) return '<div style="display:flex;flex-direction:column;gap:16px;">' + bar + main + '</div>';
+  return '<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">' + bar + '</div><div style="flex:1">' + main + '</div></div>';
 }
 
 async function privacyLoad(file) {
   if (!file || !file.type.startsWith('image/')) return;
   const reader = new FileReader();
-  reader.onload = e => { S.privacy.src = e.target.result; S.privacy.file = file; S.privacy.phase = 1; S.privacy.exif = null; S.privacy.cleanedBlob = null; render(); };
+  reader.onload = function(e) { S.privacy.src = e.target.result; S.privacy.file = file; S.privacy.phase = 1; S.privacy.exif = null; S.privacy.cleanedBlob = null; render(); };
   reader.readAsDataURL(file);
 }
 
@@ -352,50 +291,24 @@ async function privacyClean() {
   try {
     const cleaned = await clearExif(S.privacy.file);
     S.privacy.cleanedBlob = cleaned;
-  } catch(e) {
-    alert('清除失败，请重试');
-    S.privacy.phase = 2;
-  }
+  } catch(e) { alert('清除失败，请重试'); S.privacy.phase = 2; }
   render();
 }
 
-// ========== 格式转换 ==========
-function convert(src,fmt,q){return new Promise((ok)=>{
-  const img=new Image();img.onload=()=>{
-    const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
-    c.getContext('2d').drawImage(img,0,0);c.toBlob(b=>ok({url:URL.createObjectURL(b),blob:b,size:b.size}),fmt,q/100);
-  };img.src=src;
-})}
-function Conv(){
-  const s=S.conv;const bar=`<div style="display:flex;flex-direction:column;gap:16px"><div style="font-size:20px;font-weight:700">🔄 格式转换</div>${!s.src?`<div class="upload-zone" onclick="document.getElementById('f2').click()"><div style="font-size:42px">🖼️</div><div style="font-weight:600;margin-top:8px">点击上传图片</div></div>`:`<div style="border-radius:var(--r2);overflow:hidden"><img src="${s.src}" style="width:100%"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重选</button>`}<input id="f2" type="file" accept="image/*" hidden onchange="if(this.files[0])load(this.files[0],r=>{S.conv.src=r;S.conv.res=null;render()})"/><div style="display:flex;gap:8px">${FMT.map((f,i)=>`<button onclick="S.conv.fmt=${i};render()" style="flex:1;padding:12px;border-radius:16px;font-weight:700;border:2px solid ${S.conv.fmt===i?'var(--accent)':'var(--border)'};background:${S.conv.fmt===i?'var(--accent2)':'#fff'}">${f.ext.toUpperCase()}</button>`).join('')}</div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text2)">质量</span><input type="range" min="10" max="100" value="${s.q}" oninput="S.conv.q=parseInt(this.value);render()"><span style="font-weight:700">${s.q}%</span></div><button onclick="convProcess()" class="btn btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>🔄 开始转换</button></div>`;
-  const main=`<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">${s.res?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:10px">转换完成 · ${(s.size/1024).toFixed(1)} KB</div><img src="${s.res}" style="max-width:100%;max-height:60vh;border-radius:16px;margin-bottom:14px"><button onclick="dl(S.conv.blob,'xiuxiutu.'+FMT[S.conv.fmt].ext)" class="btn btn-outline">⬇ 下载</button></div>`:`<div style="text-align:center;color:#aaa"><div style="font-size:48px;margin-bottom:12px">🔄</div><div style="font-weight:600">上传图片，选择格式，一键转换</div></div>`}</div>`;
-  if(m()) return `<div style="display:flex;flex-direction:column;gap:16px;">${bar}${main}</div>`;
-  return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">${bar}</div><div style="flex:1">${main}</div></div>`;
+async function convProcess() {
+  const r = await convert(S.conv.src, FMT[S.conv.fmt].id, S.conv.q);
+  S.conv.res = r.url; S.conv.size = r.size; S.conv.blob = r.blob; render();
 }
 
-function resizeImg(src,w,h,fmt,q,mode){return new Promise((ok)=>{
-  const img=new Image();img.onload=()=>{
-    const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');
-    if(mode==='fill'){ctx.drawImage(img,0,0,w,h)}else{
-      const r=img.naturalWidth/img.naturalHeight,tr=w/h;let dw,dh,ox,oy;
-      if(r>tr){dw=w;dh=w/r;ox=0;oy=(h-dh)/2}else{dh=h;dw=h*r;ox=(w-dw)/2;oy=0}
-      ctx.fillStyle='#FFF';ctx.fillRect(0,0,w,h);ctx.drawImage(img,ox,oy,dw,dh);
-    }
-    c.toBlob(b=>ok({url:URL.createObjectURL(b),blob:b,size:b.size,w,h}),fmt,q/100);
-  };img.src=src;
-})}
-function Resize(){
-  const s=S.resize;const bar=`<div style="display:flex;flex-direction:column;gap:16px"><div style="font-size:20px;font-weight:700">📐 尺寸调整</div>${!s.src?`<div class="upload-zone" onclick="document.getElementById('f3').click()"><div style="font-size:42px">📐</div><div style="font-weight:600;margin-top:8px">点击上传图片</div></div>`:`<div style="border-radius:var(--r2);overflow:hidden"><img src="${s.src}" style="width:100%"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重选</button>`}<input id="f3" type="file" accept="image/*" hidden onchange="if(this.files[0])load(this.files[0],r=>{const img=new Image();img.onload=()=>{iw=String(img.naturalWidth);ih=String(img.naturalHeight);S.resize.src=r;S.resize.w=img.naturalWidth;S.resize.h=img.naturalHeight;S.resize.res=null;render()};img.src=r})"/><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:12px;color:var(--text2)">宽</span><input type="number" value="${iw}" oninput="iw=this.value" style="width:70px;padding:8px;border-radius:12px;border:1.5px solid var(--border);font-size:14px;font-weight:700;text-align:center"><span>×</span><span style="font-size:12px;color:var(--text2)">高</span><input type="number" value="${ih}" oninput="ih=this.value" style="width:70px;padding:8px;border-radius:12px;border:1.5px solid var(--border);font-size:14px;font-weight:700;text-align:center"><span style="font-size:10px;color:#aaa">当前${s.w}×${s.h}</span></div><div style="display:flex;gap:6px"><button onclick="S.resize.mode='fit';render()" style="flex:1;padding:10px;border-radius:16px;font-weight:700;border:2px solid ${s.mode==='fit'?'var(--accent)':'var(--border)'};background:${s.mode==='fit'?'var(--accent2)':'#fff'}">📐 等比例</button><button onclick="S.resize.mode='fill';render()" style="flex:1;padding:10px;border-radius:16px;font-weight:700;border:2px solid ${s.mode==='fill'?'var(--accent)':'var(--border)'};background:${s.mode==='fill'?'var(--accent2)':'#fff'}">📏 拉伸</button></div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:12px;color:var(--text2)">格式</span><select onchange="S.resize.fmt=this.selectedIndex;render()" style="padding:8px;border-radius:12px;border:1px solid var(--border)">${FMT.map(f=>`<option>${f.ext.toUpperCase()}</option>`).join('')}</select><span style="font-size:12px;color:var(--text2)">质量</span><input type="range" min="10" max="100" value="${s.q}" oninput="S.resize.q=parseInt(this.value);render()"><span style="font-weight:700">${s.q}%</span></div><button onclick="resizeProcess()" class="btn btn-primary" ${!s.src?'disabled style="opacity:.4"':''}>📐 开始调整</button></div>`;
-  const main=`<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">${s.res?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:10px">${s.w}×${s.h}px · ${(s.size/1024).toFixed(1)} KB</div><img src="${s.res}" style="max-width:100%;max-height:60vh;border-radius:16px;margin-bottom:14px"><button onclick="dl(S.resize.blob,'xiuxiutu_resize.'+FMT[S.resize.fmt].ext)" class="btn btn-outline">⬇ 下载</button></div>`:`<div style="text-align:center;color:#aaa"><div style="font-size:48px;margin-bottom:12px">📐</div><div style="font-weight:600">上传图片，设置尺寸，一键调整</div></div>`}</div>`;
-  if(m()) return `<div style="display:flex;flex-direction:column;gap:16px;">${bar}${main}</div>`;
-  return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">${bar}</div><div style="flex:1">${main}</div></div>`;
+async function resizeProcess() {
+  const w = parseInt(iw), h = parseInt(ih);
+  if (!isNaN(w) && w > 0 && !isNaN(h) && h > 0) { S.resize.w = Math.round(w); S.resize.h = Math.round(h); }
+  const r = await resizeImg(S.resize.src, S.resize.w, S.resize.h, FMT[S.resize.fmt].id, S.resize.q, S.resize.mode);
+  S.resize.res = r.url; S.resize.size = r.size; S.resize.blob = r.blob; S.resize.w = r.w; S.resize.h = r.h; render();
 }
 
-async function convProcess(){const r=await convert(S.conv.src,FMT[S.conv.fmt].id,S.conv.q);S.conv.res=r.url;S.conv.size=r.size;S.conv.blob=r.blob;render();}
-async function resizeProcess(){const w=parseInt(iw),h=parseInt(ih);if(!isNaN(w)&&w>0&&!isNaN(h)&&h>0){S.resize.w=Math.round(w);S.resize.h=Math.round(h)}const r=await resizeImg(S.resize.src,S.resize.w,S.resize.h,FMT[S.resize.fmt].id,S.resize.q,S.resize.mode);S.resize.res=r.url;S.resize.size=r.size;S.resize.blob=r.blob;S.resize.w=r.w;S.resize.h=r.h;render();}
-
-function render(){document.getElementById('root').innerHTML=App()}
-render();window.addEventListener('resize',render);
+render();
+window.addEventListener('resize', render);
 </script>
 </body>
 </html>
