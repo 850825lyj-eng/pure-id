@@ -1,4 +1,4 @@
-<!-- 修修图 v7.3 · 修复下载按钮布局 -->
+<!-- 修修图 v7.4 · 预览图大小互换 + 绿色按钮 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -10,12 +10,12 @@
 :root {
   --bg: #F5F7FA; --card: #FFFFFF; --text: #1E293B; --text2: #64748B;
   --accent: #22C55E; --accent-light: #F0FDF4; --accent-hover: #16A34A;
-  --warn: #F59E0B; --warn-light: #FFFBEB; --warn-hover: #D97706;
+  --warn: #F59E0B; --warn-light: #FFFBEB;
   --danger: #EF4444; --danger-light: #FEF2F2;
   --info: #3B82F6; --info-light: #EFF6FF;
   --border: #E2E8F0;
-  --btn-primary: linear-gradient(135deg, #F59E0B, #D97706);
-  --btn-hover: linear-gradient(135deg, #FBBF24, #F59E0B);
+  --btn-primary: linear-gradient(135deg, #22C55E, #16A34A);
+  --btn-hover: linear-gradient(135deg, #16A34A, #15803D);
   --shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
   --r: 24px; --r2: 16px;
 }
@@ -31,8 +31,8 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 .btn{display:inline-block;padding:12px 28px;border-radius:30px;font-weight:700;font-size:15px;text-align:center;transition:all .25s cubic-bezier(.4,0,.2,1);text-shadow:0 1px 1px rgba(0,0,0,.06)}
 .btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
 .btn:active{transform:translateY(0);box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.btn-primary{background:var(--btn-primary);color:#fff;box-shadow:0 4px 16px rgba(245,158,11,.25)}
-.btn-primary:hover{background:var(--btn-hover);box-shadow:0 8px 24px rgba(245,158,11,.35)}
+.btn-primary{background:var(--btn-primary);color:#fff;box-shadow:0 4px 16px rgba(34,197,94,.25)}
+.btn-primary:hover{background:var(--btn-hover);box-shadow:0 8px 24px rgba(34,197,94,.35)}
 .btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--text2);text-shadow:none}
 .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
 .btn-danger{background:var(--danger);color:#fff;box-shadow:0 4px 16px rgba(239,68,68,.25)}
@@ -46,6 +46,8 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 .shield-icon{animation:shieldPulse 3s infinite}
 .resize-input{width:80px;padding:10px;border-radius:12px;border:1.5px solid var(--border);font-size:15px;font-weight:700;text-align:center;background:#FAFBFC;flex-shrink:0}
 .resize-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
+/* 左侧预览图缩小 */
+.preview-thumb{width:100%;max-height:120px;object-fit:cover;border-radius:12px;border:2px solid var(--border)}
 </style>
 </head>
 <body>
@@ -123,7 +125,7 @@ function renderPrivacy(){
     '<div style="font-size:20px;font-weight:700;text-align:center">🛡️ 隐私检测</div>'+
     '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">每张照片都携带着你看不见的元数据——<strong style="color:var(--danger)">GPS 坐标</strong>、<strong style="color:var(--warn)">拍摄时间</strong>、<strong style="color:var(--warn)">设备型号</strong>。分享原图时，这些信息会一并发送。</p>'+
     (up?'<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="event.preventDefault();if(event.dataTransfer.files[0])privacyLoad(event.dataTransfer.files[0])" onclick="document.getElementById(\'fp\').click()"><div style="font-size:42px">🔍</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div><div style="font-size:12px;color:var(--text2);margin-top:4px">100% 本地处理，不上传服务器</div></div>'
-    :'<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="'+s.src+'" style="width:100%;display:block"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>')+
+    :'<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="'+s.src+'" class="preview-thumb" style="width:100%"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>')+
     '<input id="fp" type="file" accept="image/*" hidden/>'+
     '<button onclick="privacyScan()" class="btn btn-primary" style="width:100%"' + (!s.file?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'') + '>🔍 开始扫描</button>'+
     (s.phase>=2&&s.cleanedBlob?'<button onclick="privacyClean()" class="btn btn-danger" style="width:100%">🧹 清除全部隐私信息</button>':'')+
@@ -181,13 +183,13 @@ function renderConv(){
     '<div style="font-size:20px;font-weight:700;text-align:center">🔄 格式转换</div>'+
     '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">在 JPG、PNG、WebP 之间自由转换，调节压缩质量，所有处理都在本地完成。</p>'+
     (!s.src?'<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="event.preventDefault();if(event.dataTransfer.files[0])load(event.dataTransfer.files[0],r=>{S.conv.src=r;S.conv.res=null;render()})" onclick="document.getElementById(\'f2\').click()"><div style="font-size:42px">🖼️</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div></div>'
-    :'<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="'+s.src+'" style="width:100%;display:block"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>')+
+    :'<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="'+s.src+'" class="preview-thumb" style="width:100%"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>')+
     '<input id="f2" type="file" accept="image/*" hidden/>'+
     '<div style="display:flex;gap:8px">'+FMT.map((f,i)=>'<button onclick="S.conv.fmt='+i+';render()" style="flex:1;padding:14px;border-radius:16px;font-weight:700;font-size:16px;border:2px solid '+(s.fmt===i?'var(--accent)':'var(--border)')+';background:'+(s.fmt===i?'var(--accent-light)':'#fff')+';transition:all .2s;color:'+(s.fmt===i?'var(--accent)':'var(--text2)')+'">.'+f.ext.toUpperCase()+'</button>').join('')+'</div>'+
     '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2)">压缩质量</span><input type="range" min="10" max="100" value="'+s.q+'" oninput="S.conv.q=parseInt(this.value);render()"><span style="font-weight:700;font-size:15px;min-width:40px;color:var(--accent)">'+s.q+'%</span></div>'+
     '<button onclick="convProcess()" class="btn btn-primary" style="width:100%"'+(!s.src?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'')+'>🔄 开始转换</button></div>';
   const main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;height:100%">'+
-    (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">转换完成 · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" style="max-width:100%;max-height:45vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin-bottom:16px;border:2px solid var(--border);display:block;margin-left:auto;margin-right:auto"></div><button onclick="dl(S.conv.blob,\'xiuxiutu.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
+    (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">转换完成 · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" style="max-width:90%;max-height:65vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin-bottom:16px;border:2px solid var(--border);display:block;margin-left:auto;margin-right:auto"></div><button onclick="dl(S.conv.blob,\'xiuxiutu.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
     :'<div style="text-align:center;color:var(--text2)"><div style="font-size:56px;margin-bottom:16px">🔄</div><div style="font-weight:600;font-size:16px">上传图片，选择格式，一键转换</div><div style="font-size:12px;margin-top:6px">支持 JPG · PNG · WebP 互转</div></div>')+'</div>';
   if(isM)return '<div style="display:flex;flex-direction:column;gap:16px">'+bar+main+'</div>';
   return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column">'+main+'</div></div>';
@@ -199,7 +201,7 @@ function renderResize(){
     '<div style="font-size:20px;font-weight:700;text-align:center">📐 尺寸调整</div>'+
     '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">精确调整图片尺寸，支持等比例缩放或拉伸填充，选格式、调质量，一步到位。</p>'+
     (!s.src?'<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="event.preventDefault();if(event.dataTransfer.files[0]){const file=event.dataTransfer.files[0];load(file,r=>{const img=new Image();img.onload=()=>{iw=String(img.naturalWidth);ih=String(img.naturalHeight);S.resize.src=r;S.resize.w=img.naturalWidth;S.resize.h=img.naturalHeight;S.resize.res=null;render()};img.src=r})}" onclick="document.getElementById(\'f3\').click()"><div style="font-size:42px">📐</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div></div>'
-    :'<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="'+s.src+'" style="width:100%;display:block"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>')+
+    :'<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="'+s.src+'" class="preview-thumb" style="width:100%"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>')+
     '<input id="f3" type="file" accept="image/*" hidden/>'+
     '<div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap">'+
       '<span style="font-size:12px;color:var(--text2);flex-shrink:0">宽</span>'+
@@ -213,7 +215,7 @@ function renderResize(){
     '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text2)">格式</span><select onchange="S.resize.fmt=this.selectedIndex;render()" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--border);font-size:13px;font-weight:600">'+FMT.map(f=>'<option>'+f.ext.toUpperCase()+'</option>').join('')+'</select><span style="font-size:12px;color:var(--text2);margin-left:8px">质量</span><input type="range" min="10" max="100" value="'+s.q+'" oninput="S.resize.q=parseInt(this.value);render()"><span style="font-weight:700;font-size:14px;min-width:36px;color:var(--accent)">'+s.q+'%</span></div>'+
     '<button onclick="resizeProcess()" class="btn btn-primary" style="width:100%"'+(!s.src?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'')+'>📐 开始调整</button></div>';
   const main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;height:100%">'+
-    (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">'+s.w+' × '+s.h+' px · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" style="max-width:100%;max-height:45vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin-bottom:16px;border:2px solid var(--border);display:block;margin-left:auto;margin-right:auto"></div><button onclick="dl(S.resize.blob,\'xiuxiutu_resize.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
+    (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">'+s.w+' × '+s.h+' px · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" style="max-width:90%;max-height:65vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin-bottom:16px;border:2px solid var(--border);display:block;margin-left:auto;margin-right:auto"></div><button onclick="dl(S.resize.blob,\'xiuxiutu_resize.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
     :'<div style="text-align:center;color:var(--text2)"><div style="font-size:56px;margin-bottom:16px">📐</div><div style="font-weight:600;font-size:16px">上传图片，设置尺寸，一键调整</div><div style="font-size:12px;margin-top:6px">支持等比例缩放 · 拉伸填充 · 格式转换</div></div>')+'</div>';
   if(isM)return '<div style="display:flex;flex-direction:column;gap:16px">'+bar+main+'</div>';
   return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column">'+main+'</div></div>';
