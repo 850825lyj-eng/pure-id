@@ -1,3 +1,4 @@
+<!-- version: 3.0.0 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -35,7 +36,6 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 <body>
 <div id="root"></div>
 <script>
-// 证件类型
 const DOCS=[
   {id:"cn_passport",flag:"🇨🇳",label:"中国护照",size:"33×48mm",dpi:300,notes:"白底，免冠，耳朵可见",bgRule:"white"},
   {id:"us_visa",flag:"🇺🇸",label:"美国签证",size:"2×2″",dpi:300,notes:"白底，6个月内，无眼镜",bgRule:"white"},
@@ -46,7 +46,6 @@ const DOCS=[
   {id:"id_card",flag:"🪪",label:"身份证",size:"26×32mm",dpi:350,notes:"蓝底，正面免冠",bgRule:"blue"},
   {id:"linkedin",flag:"💼",label:"LinkedIn",size:"400×400px",dpi:72,notes:"专业感，简洁背景",bgRule:"any"},
 ];
-// 背景色
 const BGS=[
   {hex:"#FFFFFF",label:"纯白"},
   {hex:"#4F7DC8",label:"证件蓝"},
@@ -55,7 +54,7 @@ const BGS=[
 ];
 const FMT=[{id:"image/jpeg",ext:"jpg"},{id:"image/png",ext:"png"},{id:"image/webp",ext:"webp"}];
 
-// ===== 核心：铺底色 + 照片居中 =====
+// ========== 核心：铺底色 + 照片居中，留出明显边距 ==========
 function makePhoto(src,hex){
   return new Promise((ok,rej)=>{
     const img=new Image();
@@ -64,20 +63,23 @@ function makePhoto(src,hex){
       const c=document.createElement('canvas');
       c.width=W;c.height=H;
       const ctx=c.getContext('2d');
+      // 1. 铺满底色
       ctx.fillStyle=hex;
       ctx.fillRect(0,0,W,H);
-      const s=Math.min(W/img.naturalWidth,H/img.naturalHeight);
+      // 2. 照片缩放至 80% 区域，居中
+      const maxW=W*0.8,maxH=H*0.8;
+      const s=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight);
       const sw=img.naturalWidth*s,sh=img.naturalHeight*s;
       const sx=(W-sw)/2,sy=(H-sh)/2;
       ctx.drawImage(img,sx,sy,sw,sh);
       ok(c.toDataURL('image/jpeg',0.93));
     };
-    img.onerror=()=>rej(new Error('加载失败'));
+    img.onerror=()=>rej(new Error('图片加载失败'));
     img.src=src;
   });
 }
 
-// ===== 严格评估 =====
+// 评估
 function evaluate(imgSrc,doc){
   return new Promise((resolve)=>{
     const img=new Image();img.onload=()=>{
@@ -85,42 +87,26 @@ function evaluate(imgSrc,doc){
       c.width=img.naturalWidth*sc;c.height=img.naturalHeight*sc;
       const ctx=c.getContext('2d');ctx.drawImage(img,0,0,c.width,c.height);
       const d=ctx.getImageData(0,0,c.width,c.height).data,W=c.width,H=c.height;
-
-      // 采样四角背景色
       let r=0,g=0,b=0,n=0;
       [[5,5],[5,H-6],[W-6,5],[W-6,H-6]].forEach(([x,y])=>{
         const i=(y*W+x)*4;r+=d[i];g+=d[i+1];b+=d[i+2];n++;
       });
       r/=n;g/=n;b/=n;
-
-      // 检测亮度
       let bright=0;for(let i=0;i<d.length;i+=4)bright+=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;
       bright/=d.length/4;
-
-      // 检测清晰度（边缘强度）
-      let edge=0,ec=0;
-      for(let y=2;y<H-2;y+=4){for(let x=2;x<W-2;x+=4){
-        const idx=(y*W+x)*4;
-        const nxt=((y+2)*W+x)*4;
-        edge+=Math.abs(d[idx]-d[nxt])+Math.abs(d[idx+1]-d[nxt+1])+Math.abs(d[idx+2]-d[nxt+2]);
-        ec++;
-      }}
-      edge/=ec;
+      let edge=0,ec=0;for(let y=2;y<H-2;y+=4){for(let x=2;x<W-2;x+=4){const idx=(y*W+x)*4,nxt=((y+2)*W+x)*4;edge+=Math.abs(d[idx]-d[nxt])+Math.abs(d[idx+1]-d[nxt+1])+Math.abs(d[idx+2]-d[nxt+2]);ec++;}}edge/=ec;
 
       const checks=[
-        {name:"背景颜色",status:bgCheck(r,g,b,doc.bgRule)? "pass":"warn",
-         detail:bgCheck(r,g,b,doc.bgRule)? "符合要求":`建议用纯色背景`},
-        {name:"照片亮度",status:bright>80&&bright<220? "pass":"warn",
-         detail:bright<80? "照片过暗":bright>220? "照片过亮":"亮度适中"},
-        {name:"画面清晰",status:edge>10? "pass":"warn",
-         detail:edge>10? "清晰度良好":"图片模糊，建议重拍"},
+        {name:"背景颜色",status:bgCheck(r,g,b,doc.bgRule)?"pass":"warn",detail:bgCheck(r,g,b,doc.bgRule)?"符合要求":"建议用纯色背景"},
+        {name:"照片亮度",status:bright>80&&bright<220?"pass":"warn",detail:bright<80?"过暗":bright>220?"过亮":"适中"},
+        {name:"画面清晰",status:edge>10?"pass":"warn",detail:edge>10?"清晰":"模糊，建议重拍"},
         {name:"面部区域",status:"pass",detail:"可检测到主体"},
         {name:"构图居中",status:"pass",detail:"人物居中"},
-        {name:"格式尺寸",status:"pass",detail:"符合证件照要求"},
+        {name:"格式尺寸",status:"pass",detail:"符合要求"},
       ];
       const pc=checks.filter(c=>c.status==="pass").length;
-      const ov=pc>=5? "pass":pc>=3? "warn":"fail";
-      const score=pc>=6? 90:pc>=5? 78:pc>=4? 65:pc>=3? 50:35;
+      const ov=pc>=5?"pass":pc>=3?"warn":"fail";
+      const score=pc>=6?90:pc>=5?78:pc>=4?65:pc>=3?50:35;
       resolve({overall:ov,score,checks,topIssue:checks.find(c=>c.status==="warn")?.detail||null});
     };img.src=imgSrc;
   });
@@ -201,10 +187,14 @@ function Id(){
     :s.phase===1?`<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto"><img src="${s.src}" style="width:100%"></div><div style="margin-top:12px;color:var(--text2);font-size:13px">${DOCS[s.doc].label} · ${BGS[s.bg].label}背景</div></div>`
     :s.phase===2?`<div style="text-align:center"><div style="width:44px;height:44px;border-radius:50%;border:3px solid #eee;border-top-color:var(--accent);animation:spin .8s linear infinite;margin:0 auto 12px"></div><div>正在制作…</div></div>`
     :s.phase===3&&s.proc?`<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">✨ 证件照生成完成</div>
-      <div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:280px;margin:0 auto 20px">
+      <div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:300px;margin:0 auto 16px;border:4px solid ${BGS[S.id.bg].hex}">
         <img src="${s.proc}" style="width:100%;display:block">
       </div>
-      <div style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:16px">${DOCS[s.doc].label} · ${BGS[s.bg].label}背景</div>
+      <div style="text-align:center;margin-bottom:16px">
+        <span style="display:inline-block;padding:6px 18px;border-radius:20px;background:${BGS[S.id.bg].hex};color:${BGS[S.id.bg].hex==='#FFFFFF'||BGS[S.id.bg].hex==='#E6E6E6'?'#333':'#fff'};font-size:13px;font-weight:700;border:1px solid var(--border)">
+          🎨 背景色：${BGS[S.id.bg].label}
+        </span>
+      </div>
       ${s.result?`
       <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,.04)">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
@@ -240,7 +230,6 @@ function Resize(){
   return `<div style="display:flex;gap:16px;height:100%"><div class="card" style="width:320px;flex-shrink:0">${bar}</div><div style="flex:1">${main}</div></div>`;
 }
 
-// 处理
 async function idProcess(){
   const hex=BGS[S.id.bg].hex;S.id.phase=2;render();
   try{
