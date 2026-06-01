@@ -1,10 +1,11 @@
-<!-- 修修图 v7.5 · 预览图等比缩放+左右边框对齐 -->
+<!-- 修修图·隐私百宝箱 v7.6 · 标题含SEO关键词 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>修修图 · 隐私检测</title>
+<title>修修图·隐私百宝箱 | 图片隐私检测 · 格式转换 · 尺寸调整</title>
+<meta name="description" content="修修图隐私百宝箱，一站式图片隐私保护工具。检测照片中的GPS位置、拍摄时间、设备信息，支持JPG/PNG/WebP格式转换与图片尺寸调整，所有处理在浏览器本地完成，不上传服务器。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
 <style>
 :root {
@@ -46,14 +47,12 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 .shield-icon{animation:shieldPulse 3s infinite}
 .resize-input{width:80px;padding:10px;border-radius:12px;border:1.5px solid var(--border);font-size:15px;font-weight:700;text-align:center;background:#FAFBFC;flex-shrink:0}
 .resize-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
-/* 左侧预览图等比缩小，不裁剪 */
 .preview-thumb{display:block;max-width:100%;max-height:120px;width:auto;height:auto;border-radius:12px;border:2px solid var(--border);margin:0 auto;object-fit:contain}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script>
-// EXIF 读取（保持不变）
 function readExif(file){return new Promise((resolve)=>{
   if(typeof exifr==='undefined'){const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/lite.umd.js';s.onload=()=>doParse(file,resolve);s.onerror=()=>resolve({info:[],hasGPS:false,hasCamera:false,riskLevel:'low',rawData:null});document.head.appendChild(s)}else{doParse(file,resolve)}
 })}
@@ -95,14 +94,14 @@ let iw='800',ih='600';const m=()=>window.innerWidth<768;
 function load(f,cb){if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>cb(e.target.result);r.readAsDataURL(f)}
 
 function render(){
-  const isM=m(),s=S;const tabs=[{icon:'🛡️',label:'隐私检测'},{icon:'🔄',label:'格式转换'},{icon:'📐',label:'尺寸调整'}];
+  const isM=m(),s=S;const tabs=[{icon:'🛡️',label:'照片泄露检测',sub:'扫描 GPS / 时间 / 设备信息'},{icon:'🔄',label:'图片格式转换',sub:'JPG · PNG · WebP 互转'},{icon:'📐',label:'图片尺寸调整',sub:'等比例缩放 · 拉伸填充'}];
   let body='';if(s.tab===0)body=renderPrivacy();else if(s.tab===1)body=renderConv();else body=renderResize();
 
   document.getElementById('root').innerHTML='<div style="height:100vh;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)">'+
     '<header style="padding:16px 24px 12px;display:flex;align-items:center;flex-shrink:0;flex-direction:'+(isM?'column':'row')+';gap:'+(isM?'10px':'0')+'">'+
       '<div style="display:flex;align-items:center;gap:12px;'+(isM?'':'margin-right:auto')+'">'+
         '<div class="shield-icon" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#22C55E,#16A34A);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;box-shadow:0 4px 16px rgba(34,197,94,.35)">🛡️</div>'+
-        '<div><div style="font-size:22px;font-weight:800;letter-spacing:-.5px;text-shadow:0 1px 1px rgba(0,0,0,.04)">修修图</div><div style="font-size:10px;color:var(--text2);margin-top:1px">图片隐私安全工具</div></div>'+
+        '<div><div style="font-size:22px;font-weight:800;letter-spacing:-.5px;text-shadow:0 1px 1px rgba(0,0,0,.04)">修修图</div><div style="font-size:10px;color:var(--text2);margin-top:1px">隐私百宝箱 · 图片检测/转换/尺寸调整</div></div>'+
       '</div>'+
       '<nav style="display:flex;gap:4px;background:#fff;border-radius:32px;padding:4px;box-shadow:var(--shadow);border:1px solid var(--border);'+(isM?'':'margin:0 auto')+'">'+
         tabs.map((t,i)=>'<button class="tab-btn" onclick="S.tab='+i+';render()" style="background:'+(s.tab===i?'var(--warn)':'transparent')+';color:'+(s.tab===i?'#fff':'var(--text2)')+'">'+t.icon+' '+t.label+'</button>').join('')+
@@ -122,7 +121,8 @@ function render(){
 function renderPrivacy(){
   const s=S.privacy,up=!s.src,isM=m();
   const bar='<div class="card" style="flex:1;display:flex;flex-direction:column;gap:16px;overflow-y:auto">'+
-    '<div style="font-size:20px;font-weight:700;text-align:center">🛡️ 隐私检测</div>'+
+    '<div style="font-size:20px;font-weight:700;text-align:center">🛡️ 照片泄露检测</div>'+
+    '<p style="font-size:11px;color:var(--text2);text-align:center;margin-top:-8px">扫描照片中的 GPS 坐标 / 拍摄时间 / 设备信息</p>'+
     '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">每张照片都携带着你看不见的元数据——<strong style="color:var(--danger)">GPS 坐标</strong>、<strong style="color:var(--warn)">拍摄时间</strong>、<strong style="color:var(--warn)">设备型号</strong>。分享原图时，这些信息会一并发送。</p>'+
     (up?'<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="event.preventDefault();if(event.dataTransfer.files[0])privacyLoad(event.dataTransfer.files[0])" onclick="document.getElementById(\'fp\').click()"><div style="font-size:42px">🔍</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div><div style="font-size:12px;color:var(--text2);margin-top:4px">100% 本地处理，不上传服务器</div></div>'
     :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
@@ -133,7 +133,7 @@ function renderPrivacy(){
 
   let main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;height:100%">';
   if(s.phase===0){
-    main+='<div style="text-align:center;color:var(--text2);padding:20px"><div class="shield-icon" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#22C55E,#16A34A);display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;margin:0 auto 16px">🛡️</div><div style="font-weight:600;font-size:18px">上传照片，扫描隐藏的隐私信息</div><div style="font-size:13px;margin-top:8px">100% 本地处理，不上传服务器</div>'+
+    main+='<div style="text-align:center;color:var(--text2);padding:20px"><div class="shield-icon" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#22C55E,#16A34A);display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;margin:0 auto 16px">🛡️</div><div style="font-weight:600;font-size:18px">上传照片，检测隐藏的隐私信息</div><div style="font-size:13px;margin-top:8px">100% 本地处理，不上传服务器</div>'+
       '<div style="margin-top:28px;background:var(--warn-light);border:1.5px solid #FDE68A;border-radius:16px;padding:20px 24px;text-align:center;max-width:440px;margin-left:auto;margin-right:auto">'+
         '<div style="display:flex;align-items:flex-start;gap:12px;justify-content:center"><span style="font-size:22px;flex-shrink:0;margin-top:2px">💡</span><div><div style="font-size:14px;font-weight:700;color:var(--warn);margin-bottom:8px">如何检测到隐私信息？</div><div style="font-size:13px;color:#92400E;line-height:1.8">用<strong>手机相机</strong>拍摄的原始照片（通过<strong>数据线导入</strong>或<strong>微信原图</strong>传输），通常包含 GPS 坐标和设备信息。</div></div></div></div></div>';
   }else if(s.phase===1){
@@ -180,7 +180,8 @@ function renderPrivacy(){
 function renderConv(){
   const s=S.conv,isM=m();
   const bar='<div class="card" style="flex:1;display:flex;flex-direction:column;gap:16px;overflow-y:auto">'+
-    '<div style="font-size:20px;font-weight:700;text-align:center">🔄 格式转换</div>'+
+    '<div style="font-size:20px;font-weight:700;text-align:center">🔄 图片格式转换</div>'+
+    '<p style="font-size:11px;color:var(--text2);text-align:center;margin-top:-8px">JPG · PNG · WebP 互转</p>'+
     '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">在 JPG、PNG、WebP 之间自由转换，调节压缩质量，所有处理都在本地完成。</p>'+
     (!s.src?'<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="event.preventDefault();if(event.dataTransfer.files[0])load(event.dataTransfer.files[0],r=>{S.conv.src=r;S.conv.res=null;render()})" onclick="document.getElementById(\'f2\').click()"><div style="font-size:42px">🖼️</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div></div>'
     :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
@@ -198,7 +199,8 @@ function renderConv(){
 function renderResize(){
   const s=S.resize,isM=m();
   const bar='<div class="card" style="flex:1;display:flex;flex-direction:column;gap:16px;overflow-y:auto">'+
-    '<div style="font-size:20px;font-weight:700;text-align:center">📐 尺寸调整</div>'+
+    '<div style="font-size:20px;font-weight:700;text-align:center">📐 图片尺寸调整</div>'+
+    '<p style="font-size:11px;color:var(--text2);text-align:center;margin-top:-8px">等比例缩放 · 拉伸填充</p>'+
     '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">精确调整图片尺寸，支持等比例缩放或拉伸填充，选格式、调质量，一步到位。</p>'+
     (!s.src?'<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="event.preventDefault();if(event.dataTransfer.files[0]){const file=event.dataTransfer.files[0];load(file,r=>{const img=new Image();img.onload=()=>{iw=String(img.naturalWidth);ih=String(img.naturalHeight);S.resize.src=r;S.resize.w=img.naturalWidth;S.resize.h=img.naturalHeight;S.resize.res=null;render()};img.src=r})}" onclick="document.getElementById(\'f3\').click()"><div style="font-size:42px">📐</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div></div>'
     :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
