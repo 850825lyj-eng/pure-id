@@ -1,4 +1,4 @@
-<!-- 修修图·隐私百宝箱 v7.8 · 上传区文字全部居中 -->
+<!-- 修修图·隐私百宝箱 v7.9 · 去掉所有图片和图标边框 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -47,7 +47,9 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 .shield-icon{animation:shieldPulse 3s infinite}
 .resize-input{width:80px;padding:10px;border-radius:12px;border:1.5px solid var(--border);font-size:15px;font-weight:700;text-align:center;background:#FAFBFC;flex-shrink:0}
 .resize-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
-.preview-thumb{display:block;max-width:100%;max-height:120px;width:auto;height:auto;border-radius:12px;border:2px solid var(--border);margin:0 auto;object-fit:contain}
+/* 预览图和结果图无边框 */
+.preview-thumb{display:block;max-width:100%;max-height:120px;width:auto;height:auto;border-radius:12px;margin:0 auto;object-fit:contain;border:none}
+.result-img{max-width:90%;max-height:65vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);display:block;margin-left:auto;margin-right:auto;margin-bottom:16px;border:none}
 </style>
 </head>
 <body>
@@ -93,7 +95,6 @@ let iw='800',ih='600';const m=()=>window.innerWidth<768;
 
 function load(f,cb){if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>cb(e.target.result);r.readAsDataURL(f)}
 
-// 上传区HTML模板，保证三个工具的文字完全一致且居中
 function uploadZoneHTML(icon, toolId, onDropHandler) {
   return '<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="'+onDropHandler+'" onclick="document.getElementById(\''+toolId+'\').click()">'+
     '<div style="text-align:center"><div style="font-size:42px;text-align:center">'+icon+'</div></div>'+
@@ -111,8 +112,9 @@ function render(){
   ];
   let body='';if(s.tab===0)body=renderPrivacy();else if(s.tab===1)body=renderConv();else body=renderResize();
 
+  // 品牌栏：盾牌图标去掉边框感，只保留光晕
   const brandHTML = '<div style="display:flex;align-items:center;gap:12px;'+(isM?'':'margin-right:auto')+'">'+
-    '<div class="shield-icon" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#22C55E,#16A34A);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;box-shadow:0 4px 16px rgba(34,197,94,.35)">🛡️</div>'+
+    '<div class="shield-icon" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#22C55E,#16A34A);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;box-shadow:0 4px 16px rgba(34,197,94,.35);border:none">🛡️</div>'+
     '<div>'+
       '<div style="font-size:22px;font-weight:800;letter-spacing:-.5px;text-shadow:0 1px 1px rgba(0,0,0,.04)">修修图·隐私百宝箱</div>'+
       '<div style="font-size:10px;color:var(--text2);margin-top:2px">图片检测 / 格式转换 / 尺寸调整</div>'+
@@ -153,11 +155,11 @@ function renderPrivacy(){
 
   let main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;height:100%">';
   if(s.phase===0){
-    main+='<div style="text-align:center;color:var(--text2);padding:20px"><div class="shield-icon" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#22C55E,#16A34A);display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;margin:0 auto 16px">🛡️</div><div style="font-weight:600;font-size:18px">上传照片，检测隐藏的隐私信息</div><div style="font-size:13px;margin-top:8px">100% 本地处理，不上传服务器</div>'+
+    main+='<div style="text-align:center;color:var(--text2);padding:20px"><div class="shield-icon" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#22C55E,#16A34A);display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;margin:0 auto 16px;border:none">🛡️</div><div style="font-weight:600;font-size:18px">上传照片，检测隐藏的隐私信息</div><div style="font-size:13px;margin-top:8px">100% 本地处理，不上传服务器</div>'+
       '<div style="margin-top:28px;background:var(--warn-light);border:1.5px solid #FDE68A;border-radius:16px;padding:20px 24px;text-align:center;max-width:440px;margin-left:auto;margin-right:auto">'+
         '<div style="display:flex;align-items:flex-start;gap:12px;justify-content:center"><span style="font-size:22px;flex-shrink:0;margin-top:2px">💡</span><div><div style="font-size:14px;font-weight:700;color:var(--warn);margin-bottom:8px">如何检测到隐私信息？</div><div style="font-size:13px;color:#92400E;line-height:1.8">用<strong>手机相机</strong>拍摄的原始照片（通过<strong>数据线导入</strong>或<strong>微信原图</strong>传输），通常包含 GPS 坐标和设备信息。</div></div></div></div></div>';
   }else if(s.phase===1){
-    main+='<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px;font-size:14px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.06);max-width:360px;margin:0 auto;border:2px solid var(--border)"><img src="'+s.src+'" style="width:100%;display:block"></div></div>';
+    main+='<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px;font-size:14px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.06);max-width:360px;margin:0 auto"><img src="'+s.src+'" style="width:100%;display:block;border:none"></div></div>';
   }else if(s.phase===2&&s.exif){
     main+='<div style="width:100%;max-width:600px">';
     const rc={high:'var(--danger-light)',medium:'var(--warn-light)',low:'var(--accent-light)'};
@@ -189,7 +191,7 @@ function renderPrivacy(){
     main+='<div style="text-align:center;font-size:12px;color:var(--text2);margin-top:8px">点击左侧「清除全部隐私信息」生成不含任何元数据的安全版本</div>';
     main+='</div>';
   }else if(s.phase===3&&s.cleanedBlob){
-    main+='<div style="width:100%;max-width:500px;text-align:center"><div style="font-weight:700;margin-bottom:16px;font-size:18px;color:var(--accent)">✅ 隐私信息已清除</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.06);max-width:360px;margin:0 auto 16px;border:3px solid var(--accent)"><img src="'+s.cleanedBlob.url+'" style="width:100%;display:block"></div><div style="margin-bottom:12px"><span style="display:inline-block;padding:8px 20px;border-radius:20px;background:var(--accent-light);color:var(--accent);font-size:14px;font-weight:700">✅ 安全版本已生成</span></div><div style="font-size:13px;color:var(--text2);margin-bottom:16px">原始：'+(s.file.size/1024).toFixed(1)+' KB → 安全版本：'+(s.cleanedBlob.size/1024).toFixed(1)+' KB</div><button onclick="dl(S.privacy.cleanedBlob,\'safe_'+s.file.name+'\')" class="btn btn-primary">⬇ 下载安全版本</button></div>';
+    main+='<div style="width:100%;max-width:500px;text-align:center"><div style="font-weight:700;margin-bottom:16px;font-size:18px;color:var(--accent)">✅ 隐私信息已清除</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.06);max-width:360px;margin:0 auto 16px"><img src="'+s.cleanedBlob.url+'" style="width:100%;display:block;border:none"></div><div style="margin-bottom:12px"><span style="display:inline-block;padding:8px 20px;border-radius:20px;background:var(--accent-light);color:var(--accent);font-size:14px;font-weight:700">✅ 安全版本已生成</span></div><div style="font-size:13px;color:var(--text2);margin-bottom:16px">原始：'+(s.file.size/1024).toFixed(1)+' KB → 安全版本：'+(s.cleanedBlob.size/1024).toFixed(1)+' KB</div><button onclick="dl(S.privacy.cleanedBlob,\'safe_'+s.file.name+'\')" class="btn btn-primary">⬇ 下载安全版本</button></div>';
   }
   main+='</div>';
 
@@ -210,7 +212,7 @@ function renderConv(){
     '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2)">压缩质量</span><input type="range" min="10" max="100" value="'+s.q+'" oninput="S.conv.q=parseInt(this.value);render()"><span style="font-weight:700;font-size:15px;min-width:40px;color:var(--accent)">'+s.q+'%</span></div>'+
     '<button onclick="convProcess()" class="btn btn-primary" style="width:100%"'+(!s.src?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'')+'>🔄 开始转换</button></div>';
   const main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;height:100%">'+
-    (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">转换完成 · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" style="max-width:90%;max-height:65vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin-bottom:16px;border:2px solid var(--border);display:block;margin-left:auto;margin-right:auto"></div><button onclick="dl(S.conv.blob,\'xiuxiutu.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
+    (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">转换完成 · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" class="result-img"></div><button onclick="dl(S.conv.blob,\'xiuxiutu.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
     :'<div style="text-align:center;color:var(--text2)"><div style="font-size:56px;margin-bottom:16px">🔄</div><div style="font-weight:600;font-size:16px">上传图片，选择格式，一键转换</div><div style="font-size:12px;margin-top:6px">支持 JPG · PNG · WebP 互转</div></div>')+'</div>';
   if(isM)return '<div style="display:flex;flex-direction:column;gap:16px">'+bar+main+'</div>';
   return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0;display:flex;flex-direction:column;height:100%">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+main+'</div></div>';
@@ -237,7 +239,7 @@ function renderResize(){
     '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text2)">格式</span><select onchange="S.resize.fmt=this.selectedIndex;render()" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--border);font-size:13px;font-weight:600">'+FMT.map(f=>'<option>'+f.ext.toUpperCase()+'</option>').join('')+'</select><span style="font-size:12px;color:var(--text2);margin-left:8px">质量</span><input type="range" min="10" max="100" value="'+s.q+'" oninput="S.resize.q=parseInt(this.value);render()"><span style="font-weight:700;font-size:14px;min-width:36px;color:var(--accent)">'+s.q+'%</span></div>'+
     '<button onclick="resizeProcess()" class="btn btn-primary" style="width:100%"'+(!s.src?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'')+'>📐 开始调整</button></div>';
   const main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;height:100%">'+
-    (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">'+s.w+' × '+s.h+' px · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" style="max-width:90%;max-height:65vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin-bottom:16px;border:2px solid var(--border);display:block;margin-left:auto;margin-right:auto"></div><button onclick="dl(S.resize.blob,\'xiuxiutu_resize.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
+    (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">'+s.w+' × '+s.h+' px · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" class="result-img"></div><button onclick="dl(S.resize.blob,\'xiuxiutu_resize.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
     :'<div style="text-align:center;color:var(--text2)"><div style="font-size:56px;margin-bottom:16px">📐</div><div style="font-weight:600;font-size:16px">上传图片，设置尺寸，一键调整</div><div style="font-size:12px;margin-top:6px">支持等比例缩放 · 拉伸填充 · 格式转换</div></div>')+'</div>';
   if(isM)return '<div style="display:flex;flex-direction:column;gap:16px">'+bar+main+'</div>';
   return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0;display:flex;flex-direction:column;height:100%">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+main+'</div></div>';
