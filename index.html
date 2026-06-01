@@ -1,4 +1,4 @@
-<!-- 修修图 v6.1 · 新配色 + 动画 + 居中 -->
+<!-- 修修图 v6.2 · 左侧标题居中 + 提示居中 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -110,8 +110,8 @@ function render(){
 function renderPrivacy(){
   const s=S.privacy,up=!s.src,isM=m();
   const bar='<div class="card" style="display:flex;flex-direction:column;gap:16px">'+
-    '<div style="font-size:20px;font-weight:700;text-shadow:0 1px 1px rgba(0,0,0,.06)">🛡️ 隐私检测</div>'+
-    '<p style="font-size:13px;color:var(--text2);line-height:1.7">每张照片都携带着你看不见的元数据——<strong style="color:#B03030">GPS 坐标</strong>、<strong style="color:#A06A00">拍摄时间</strong>、<strong style="color:#A06A00">设备型号</strong>。分享原图时，这些信息会一并发送。</p>'+
+    '<div style="font-size:20px;font-weight:700;text-shadow:0 1px 1px rgba(0,0,0,.06);text-align:center">🛡️ 隐私检测</div>'+
+    '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">每张照片都携带着你看不见的元数据——<strong style="color:#B03030">GPS 坐标</strong>、<strong style="color:#A06A00">拍摄时间</strong>、<strong style="color:#A06A00">设备型号</strong>。分享原图时，这些信息会一并发送。</p>'+
     (up?'<div class="upload-zone" onclick="document.getElementById(\'fp\').click()"><div style="font-size:42px">🔍</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击上传照片</div><div style="font-size:12px;color:#999;margin-top:4px">100% 本地处理，不上传服务器</div></div>'
     :'<div style="border-radius:var(--r2);overflow:hidden;border:2px solid var(--border)"><img src="'+s.src+'" style="width:100%;display:block"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重新选择</button>')+
     '<input id="fp" type="file" accept="image/*" hidden/>'+
@@ -122,8 +122,8 @@ function renderPrivacy(){
   let main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;overflow:auto">';
   if(s.phase===0){
     main+='<div style="text-align:center;color:#aaa;padding:20px"><div style="font-size:64px;margin-bottom:16px">🛡️</div><div style="font-weight:600;font-size:18px;text-shadow:0 1px 1px rgba(0,0,0,.04)">上传照片，扫描隐藏的隐私信息</div><div style="font-size:13px;margin-top:8px">100% 本地处理，不上传服务器</div>'+
-      '<div style="margin-top:28px;background:#FFF8EC;border:1.5px solid #EDB84A;border-radius:16px;padding:20px 24px;text-align:left;max-width:440px;margin-left:auto;margin-right:auto">'+
-        '<div style="display:flex;align-items:flex-start;gap:12px"><span style="font-size:22px;flex-shrink:0;margin-top:2px">💡</span><div><div style="font-size:14px;font-weight:700;color:#A06A00;margin-bottom:8px">如何检测到隐私信息？</div><div style="font-size:13px;color:#6b5e4e;line-height:1.8">用<strong>手机相机</strong>拍摄的原始照片（通过<strong>数据线导入</strong>或<strong>微信原图</strong>传输），通常包含 GPS 坐标和设备信息。</div></div></div></div></div>';
+      '<div style="margin-top:28px;background:#FFF8EC;border:1.5px solid #EDB84A;border-radius:16px;padding:20px 24px;text-align:center;max-width:440px;margin-left:auto;margin-right:auto">'+
+        '<div style="display:flex;align-items:flex-start;gap:12px;justify-content:center"><span style="font-size:22px;flex-shrink:0;margin-top:2px">💡</span><div><div style="font-size:14px;font-weight:700;color:#A06A00;margin-bottom:8px">如何检测到隐私信息？</div><div style="font-size:13px;color:#6b5e4e;line-height:1.8">用<strong>手机相机</strong>拍摄的原始照片（通过<strong>数据线导入</strong>或<strong>微信原图</strong>传输），通常包含 GPS 坐标和设备信息。</div></div></div></div></div>';
   }else if(s.phase===1){
     main+='<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px;font-size:14px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto"><img src="'+s.src+'" style="width:100%;display:block"></div></div>';
   }else if(s.phase===2&&s.exif){
@@ -132,8 +132,8 @@ function renderPrivacy(){
     main+='<div style="text-align:center;margin-bottom:20px"><span style="display:inline-block;padding:10px 28px;border-radius:30px;font-size:17px;font-weight:800;background:'+rc[s.exif.riskLevel]+';color:'+rtc[s.exif.riskLevel]+';text-shadow:0 1px 1px rgba(0,0,0,.04)">'+rl[s.exif.riskLevel]+'</span>';
     if(s.exif.hasGPS)main+='<div style="font-size:14px;color:#B03030;margin-top:10px;font-weight:600">任何人收到原图都能获取你的精确拍摄地点</div>';
     if(s.exif.riskLevel==='low'&&s.exif.info.length===0){
-      main+='<div style="margin-top:20px;background:#F0F7FF;border:1.5px solid #4F7DC8;border-radius:14px;padding:18px 20px;text-align:left">'+
-        '<div style="display:flex;align-items:flex-start;gap:10px"><span style="font-size:20px;flex-shrink:0">💡</span><div><div style="font-size:13px;font-weight:700;color:#2c5282;margin-bottom:6px">如何检测到隐私信息？</div><div style="font-size:12px;color:#4a5568;line-height:1.8">用<strong>手机相机</strong>拍摄的原始照片（通过<strong>数据线导入</strong>或<strong>微信原图</strong>传输），通常包含 GPS 坐标和设备信息。</div></div></div></div>';
+      main+='<div style="margin-top:20px;background:#F0F7FF;border:1.5px solid #4F7DC8;border-radius:14px;padding:18px 20px;text-align:center">'+
+        '<div style="display:flex;align-items:flex-start;gap:10px;justify-content:center"><span style="font-size:20px;flex-shrink:0">💡</span><div><div style="font-size:13px;font-weight:700;color:#2c5282;margin-bottom:6px">如何检测到隐私信息？</div><div style="font-size:12px;color:#4a5568;line-height:1.8">用<strong>手机相机</strong>拍摄的原始照片（通过<strong>数据线导入</strong>或<strong>微信原图</strong>传输），通常包含 GPS 坐标和设备信息。</div></div></div></div>';
     }
     main+='</div>';
     if(s.exif.info.length>0){
@@ -162,8 +162,9 @@ function renderPrivacy(){
 
 function renderConv(){
   const s=S.conv,isM=m();
-  const bar='<div class="card" style="display:flex;flex-direction:column;gap:16px"><div style="font-size:20px;font-weight:700;text-shadow:0 1px 1px rgba(0,0,0,.06)">🔄 格式转换</div>'+
-    '<p style="font-size:13px;color:var(--text2);line-height:1.7">在 JPG、PNG、WebP 之间自由转换，调节压缩质量，所有处理都在本地完成。</p>'+
+  const bar='<div class="card" style="display:flex;flex-direction:column;gap:16px">'+
+    '<div style="font-size:20px;font-weight:700;text-shadow:0 1px 1px rgba(0,0,0,.06);text-align:center">🔄 格式转换</div>'+
+    '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">在 JPG、PNG、WebP 之间自由转换，调节压缩质量，所有处理都在本地完成。</p>'+
     (!s.src?'<div class="upload-zone" onclick="document.getElementById(\'f2\').click()"><div style="font-size:42px">🖼️</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击上传图片</div></div>'
     :'<div style="border-radius:var(--r2);overflow:hidden"><img src="'+s.src+'" style="width:100%;display:block"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重选</button>')+
     '<input id="f2" type="file" accept="image/*" hidden/>'+
@@ -179,8 +180,9 @@ function renderConv(){
 
 function renderResize(){
   const s=S.resize,isM=m();
-  const bar='<div class="card" style="display:flex;flex-direction:column;gap:16px"><div style="font-size:20px;font-weight:700;text-shadow:0 1px 1px rgba(0,0,0,.06)">📐 尺寸调整</div>'+
-    '<p style="font-size:13px;color:var(--text2);line-height:1.7">精确调整图片尺寸，支持等比例缩放或拉伸填充，选格式、调质量，一步到位。</p>'+
+  const bar='<div class="card" style="display:flex;flex-direction:column;gap:16px">'+
+    '<div style="font-size:20px;font-weight:700;text-shadow:0 1px 1px rgba(0,0,0,.06);text-align:center">📐 尺寸调整</div>'+
+    '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">精确调整图片尺寸，支持等比例缩放或拉伸填充，选格式、调质量，一步到位。</p>'+
     (!s.src?'<div class="upload-zone" onclick="document.getElementById(\'f3\').click()"><div style="font-size:42px">📐</div><div style="font-weight:600;margin-top:8px;font-size:15px">点击上传图片</div></div>'
     :'<div style="border-radius:var(--r2);overflow:hidden"><img src="'+s.src+'" style="width:100%;display:block"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:flex-start">重选</button>')+
     '<input id="f3" type="file" accept="image/*" hidden/>'+
