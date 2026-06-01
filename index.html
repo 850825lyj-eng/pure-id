@@ -1,4 +1,4 @@
-<!-- version: 5.0.1 - Exif 隐私检测与清除 -->
+<!-- version: 5.0.2 - 修复 GPS 读取 + 显示原始 EXIF -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -27,14 +27,14 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 <body>
 <div id="root"></div>
 <script>
-// ========== EXIF 读取（使用 exifr CDN） ==========
+// ========== EXIF 读取（修复 GPS 字段 + 返回原始数据） ==========
 function readExif(file) {
   return new Promise((resolve) => {
     if (typeof exifr === 'undefined') {
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/lite.umd.js';
       script.onload = () => doParse(file, resolve);
-      script.onerror = () => resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low' });
+      script.onerror = () => resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low', rawData: null });
       document.head.appendChild(script);
     } else {
       doParse(file, resolve);
@@ -45,13 +45,32 @@ function readExif(file) {
 async function doParse(file, resolve) {
   try {
     const data = await exifr.parse(file, { gps: true, tiff: true, iptc: true, xmp: true, icc: true });
-    if (!data) { resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low' }); return; }
+    if (!data) { resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low', rawData: null }); return; }
+
+    // 构建原始数据的可读版本
+    const rawEntries = [];
+    for (const key in data) {
+      if (data[key] !== undefined && data[key] !== null && key !== 'constructor') {
+        const val = typeof data[key] === 'object' ? JSON.stringify(data[key]) : String(data[key]);
+        rawEntries.push({ key, val });
+      }
+    }
+
     const info = [];
     let hasGPS = false, hasCamera = false;
-    if (data.latitude && data.longitude) {
+
+    // GPS 位置 — 尝试多种可能的字段名
+    let lat = null, lng = null;
+    if (data.latitude !== undefined && data.longitude !== undefined) { lat = data.latitude; lng = data.longitude; }
+    else if (data.GPSLatitude !== undefined && data.GPSLongitude !== undefined) { lat = data.GPSLatitude; lng = data.GPSLongitude; }
+    else if (data.gps && data.gps.latitude !== undefined && data.gps.longitude !== undefined) { lat = data.gps.latitude; lng = data.gps.longitude; }
+    else if (data.GPS && data.GPS.latitude !== undefined && data.GPS.longitude !== undefined) { lat = data.GPS.latitude; lng = data.GPS.longitude; }
+
+    if (lat !== null && lng !== null) {
       hasGPS = true;
-      info.push({ name: '📍 GPS 位置', value: data.latitude.toFixed(4) + ', ' + data.longitude.toFixed(4), risk: 'high', detail: '任何人都能通过这些坐标定位到你的拍摄地点' });
+      info.push({ name: '📍 GPS 位置', value: Number(lat).toFixed(4) + ', ' + Number(lng).toFixed(4), risk: 'high', detail: '任何人都能通过这些坐标定位到你的拍摄地点' });
     }
+
     if (data.DateTimeOriginal) {
       const dt = typeof data.DateTimeOriginal === 'string' ? data.DateTimeOriginal : data.DateTimeOriginal.toISOString();
       info.push({ name: '📅 拍摄时间', value: dt, risk: 'medium', detail: '包含精确的拍摄日期和时间' });
@@ -66,12 +85,14 @@ async function doParse(file, resolve) {
     if (data.ISO) { info.push({ name: '💡 ISO', value: 'ISO ' + data.ISO, risk: 'low', detail: '包含感光度设置' }); }
     if (data.ImageWidth && data.ImageHeight) { info.push({ name: '📐 分辨率', value: data.ImageWidth + ' × ' + data.ImageHeight + ' px', risk: 'low', detail: '原始照片的像素尺寸' }); }
     if (data.Software) { info.push({ name: '🖥️ 处理软件', value: data.Software, risk: 'low', detail: '包含后期处理软件的版本信息' }); }
+
     let riskLevel = 'low';
     if (hasGPS) riskLevel = 'high';
     else if (hasCamera || info.some(i => i.name === '📅 拍摄时间')) riskLevel = 'medium';
-    resolve({ info, hasGPS, hasCamera, riskLevel });
+
+    resolve({ info, hasGPS, hasCamera, riskLevel, rawData: rawEntries.length > 0 ? rawEntries : null });
   } catch (e) {
-    resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low' });
+    resolve({ info: [], hasGPS: false, hasCamera: false, riskLevel: 'low', rawData: null });
   }
 }
 
@@ -166,7 +187,6 @@ function render() {
     '<div style="flex:1;overflow:auto;padding:0 16px 16px">' + bodyContent + '</div>' +
   '</div>';
 
-  // 绑定事件
   setTimeout(() => {
     const fp = document.getElementById('fp');
     const f2 = document.getElementById('f2');
@@ -195,10 +215,10 @@ function renderPrivacy() {
     (s.phase >= 2 && s.cleanedBlob ? '<button onclick="privacyClean()" class="btn btn-outline" style="width:100%">🧹 清除隐私信息并下载安全版本</button>' : '') +
     '</div>';
 
-  let main = '<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%">';
+  let main = '<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%;overflow:auto">';
   
   if (s.phase === 0) {
-    main += '<div style="text-align:center;color:#aaa"><div style="font-size:64px;margin-bottom:12px">🛡️</div><div style="font-weight:600;font-size:16px">上传照片，检测隐藏的隐私信息</div><div style="font-size:12px;margin-top:6px">100% 本地处理，不上传服务器</div></div>';
+    main += '<div style="text-align:center;color:#aaa"><div style="font-size:64px;margin-bottom:12px">🛡️</div><div style="font-weight:600;font-size:16px">上传照片，检测隐藏的隐私信息</div><div style="font-size:12px;margin-top:6px">用手机相机原图测试，可看到 GPS 坐标等真实数据</div></div>';
   } else if (s.phase === 1) {
     main += '<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto"><img src="' + s.src + '" style="width:100%"></div></div>';
   } else if (s.phase === 2 && s.exif) {
@@ -208,6 +228,10 @@ function renderPrivacy() {
     const riskLabels = { high: '🔴 高风险', medium: '🟡 中风险', low: '🟢 低风险' };
     main += '<div style="text-align:center;margin-bottom:16px"><span style="display:inline-block;padding:8px 24px;border-radius:30px;font-size:16px;font-weight:800;background:' + riskColors[s.exif.riskLevel] + ';color:' + riskTextColors[s.exif.riskLevel] + '">' + riskLabels[s.exif.riskLevel] + '</span>';
     if (s.exif.hasGPS) main += '<div style="font-size:13px;color:#B03030;margin-top:8px;font-weight:600">⚠️ 这张照片包含 GPS 坐标，发布后可能暴露你的位置</div>';
+    if (s.exif.riskLevel === 'low' && s.exif.info.length === 0) {
+      main += '<div style="font-size:12px;color:#6b6b6b;margin-top:8px">未检测到任何 EXIF 隐私信息</div>';
+      main += '<div style="font-size:11px;color:#999;margin-top:4px">💡 提示：用手机相机拍摄的原始照片（通过数据线导入）通常包含 GPS 和设备信息</div>';
+    }
     main += '</div>';
     
     if (s.exif.info.length > 0) {
@@ -221,9 +245,19 @@ function renderPrivacy() {
           '<span style="font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;background:' + riskColor + ';color:#fff;flex-shrink:0">' + (item.risk === 'high' ? '高风险' : (item.risk === 'medium' ? '中风险' : '一般')) + '</span></div>';
       });
       main += '</div></div>';
-    } else {
-      main += '<div style="text-align:center;padding:30px;color:#6b6b6b">🎉 这张照片未检测到明显隐私信息</div>';
     }
+
+    // 显示原始 EXIF 数据
+    if (s.exif.rawData && s.exif.rawData.length > 0) {
+      main += '<div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,.04);margin-bottom:16px">';
+      main += '<div style="font-size:11px;font-weight:700;color:#6b6b6b;margin-bottom:8px">📋 读取到的原始 EXIF 数据（共' + s.exif.rawData.length + '项）</div>';
+      main += '<div style="font-size:10px;color:#999;max-height:200px;overflow:auto;background:#f9fafb;border-radius:8px;padding:10px">';
+      s.exif.rawData.forEach(function(entry) {
+        main += '<div style="padding:2px 0"><b>' + entry.key + '：</b>' + entry.val + '</div>';
+      });
+      main += '</div></div>';
+    }
+
     main += '<div style="text-align:center;font-size:12px;color:#6b6b6b">点击左下角"清除隐私信息"按钮，生成不含任何元数据的安全版本</div></div>';
   } else if (s.phase === 3 && s.cleanedBlob) {
     main += '<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">✅ 隐私信息已清除</div>' +
