@@ -1,10 +1,10 @@
-<!-- version: 5.1.0 - 泄露扫描 + 醒目提示 -->
+<!-- version: 5.2.0 - 隐私检测 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>修修图 · 泄露扫描</title>
+<title>修修图 · 隐私检测</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
 <style>
 :root{--bg:#f4f3f0;--card:#fff;--text:#1e1e1e;--text2:#6b6b6b;--accent:#c8a96e;--accent2:#f5efe4;--border:#e8e5e0;--shadow:0 8px 30px rgba(0,0,0,.04);--radius:28px;--r2:18px}
@@ -61,22 +61,22 @@ async function doParse(file, resolve) {
     else if (data.GPS && data.GPS.latitude !== undefined && data.GPS.longitude !== undefined) { lat = data.GPS.latitude; lng = data.GPS.longitude; }
     if (lat !== null && lng !== null) {
       hasGPS = true;
-      info.push({ name: '📍 GPS 位置', value: Number(lat).toFixed(4) + ', ' + Number(lng).toFixed(4), risk: 'high', detail: '任何人都能通过这些坐标定位到你的拍摄地点' });
+      info.push({ name: '📍 GPS 位置', value: Number(lat).toFixed(4) + ', ' + Number(lng).toFixed(4), risk: 'high', detail: '此照片包含精确的拍摄地点坐标' });
     }
     if (data.DateTimeOriginal) {
       const dt = typeof data.DateTimeOriginal === 'string' ? data.DateTimeOriginal : data.DateTimeOriginal.toISOString();
-      info.push({ name: '📅 拍摄时间', value: dt, risk: 'medium', detail: '包含精确的拍摄日期和时间' });
+      info.push({ name: '📅 拍摄时间', value: dt, risk: 'medium', detail: '此照片包含精确的拍摄日期和时间' });
     }
     if (data.Make || data.Model) {
       hasCamera = true;
-      info.push({ name: '📷 拍摄设备', value: [data.Make, data.Model].filter(Boolean).join(' ') || '未知', risk: 'medium', detail: '包含相机品牌、型号等信息' });
+      info.push({ name: '📷 拍摄设备', value: [data.Make, data.Model].filter(Boolean).join(' ') || '未知', risk: 'medium', detail: '此照片包含相机品牌、型号等信息' });
     }
-    if (data.LensModel) { info.push({ name: '🔍 镜头型号', value: data.LensModel, risk: 'low', detail: '包含使用的镜头信息' }); }
-    if (data.FNumber) { info.push({ name: '⚙️ 光圈', value: 'f/' + data.FNumber, risk: 'low', detail: '包含光圈设置' }); }
-    if (data.ExposureTime) { info.push({ name: '⏱️ 快门速度', value: data.ExposureTime < 1 ? '1/' + Math.round(1/data.ExposureTime) + ' 秒' : data.ExposureTime + ' 秒', risk: 'low', detail: '包含快门速度' }); }
-    if (data.ISO) { info.push({ name: '💡 ISO', value: 'ISO ' + data.ISO, risk: 'low', detail: '包含感光度设置' }); }
+    if (data.LensModel) { info.push({ name: '🔍 镜头型号', value: data.LensModel, risk: 'low', detail: '此照片包含使用的镜头信息' }); }
+    if (data.FNumber) { info.push({ name: '⚙️ 光圈', value: 'f/' + data.FNumber, risk: 'low', detail: '此照片包含光圈设置' }); }
+    if (data.ExposureTime) { info.push({ name: '⏱️ 快门速度', value: data.ExposureTime < 1 ? '1/' + Math.round(1/data.ExposureTime) + ' 秒' : data.ExposureTime + ' 秒', risk: 'low', detail: '此照片包含快门速度' }); }
+    if (data.ISO) { info.push({ name: '💡 ISO', value: 'ISO ' + data.ISO, risk: 'low', detail: '此照片包含感光度设置' }); }
     if (data.ImageWidth && data.ImageHeight) { info.push({ name: '📐 分辨率', value: data.ImageWidth + ' × ' + data.ImageHeight + ' px', risk: 'low', detail: '原始照片的像素尺寸' }); }
-    if (data.Software) { info.push({ name: '🖥️ 处理软件', value: data.Software, risk: 'low', detail: '包含后期处理软件的版本信息' }); }
+    if (data.Software) { info.push({ name: '🖥️ 处理软件', value: data.Software, risk: 'low', detail: '此照片包含后期处理软件的版本信息' }); }
     let riskLevel = 'low';
     if (hasGPS) riskLevel = 'high';
     else if (hasCamera || info.some(i => i.name === '📅 拍摄时间')) riskLevel = 'medium';
@@ -156,7 +156,7 @@ function load(f, cb) {
 
 function render() {
   const isM = m();
-  const tabs = ['🛡️ 泄露扫描', '🔄 格式转换', '📐 尺寸调整'];
+  const tabs = ['🛡️ 隐私检测', '🔄 格式转换', '📐 尺寸调整'];
   const s = S;
   let bodyContent = '';
   if (s.tab === 0) bodyContent = renderPrivacy();
@@ -167,7 +167,7 @@ function render() {
     '<div style="padding:12px 20px 8px;display:flex;align-items:center;justify-content:' + (isM ? 'center' : 'space-between') + ';flex-direction:' + (isM ? 'column' : 'row') + ';gap:' + (isM ? '8px' : '0') + '">' +
       '<div style="display:flex;align-items:center;gap:10px;' + (isM ? 'margin-bottom:4px' : '') + '">' +
         '<div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#d4b87a,#b08d48);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">🛡️</div>' +
-        '<div><div style="font-size:20px;font-weight:800">修修图</div><div style="font-size:10px;color:#6b6b6b">泄露扫描工具</div></div>' +
+        '<div><div style="font-size:20px;font-weight:800">修修图</div><div style="font-size:10px;color:#6b6b6b">隐私检测 · 格式转换 · 尺寸调整</div></div>' +
       '</div>' +
       '<div style="display:flex;gap:6px;background:#fff;border-radius:30px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.03);' + (isM ? 'justify-content:center' : '') + '">' +
         tabs.map((t, i) => '<button onclick="S.tab=' + i + ';render()" style="padding:8px ' + (isM ? 16 : 18) + 'px;border-radius:30px;font-size:' + (isM ? 14 : 13) + 'px;font-weight:700;background:' + (s.tab === i ? '#c8a96e' : 'transparent') + ';color:' + (s.tab === i ? '#fff' : '#6b6b6b') + '">' + t + '</button>').join('') +
@@ -196,27 +196,26 @@ function renderPrivacy() {
   const isM = m();
   
   const bar = '<div style="display:flex;flex-direction:column;gap:16px">' +
-    '<div style="font-size:20px;font-weight:700">🛡️ 泄露扫描</div>' +
-    '<div style="font-size:12px;color:#6b6b6b;line-height:1.6">检测照片中隐藏的<strong style="color:#B03030">拍摄位置</strong>、<strong style="color:#A06A00">设备信息</strong>和<strong style="color:#A06A00">拍摄时间</strong>，一键清除保护隐私</div>' +
-    (up ? '<div class="upload-zone" onclick="document.getElementById(\'fp\').click()"><div style="font-size:42px">🔍</div><div style="font-weight:600;margin-top:8px">点击上传照片</div><div style="font-size:12px;color:#999;margin-top:4px">检测照片中隐藏的隐私信息</div></div>'
+    '<div style="font-size:20px;font-weight:700">🛡️ 隐私检测</div>' +
+    '<div style="font-size:12px;color:#6b6b6b;line-height:1.6">每张照片都携带着你看不见的元数据——<strong style="color:#B03030">GPS 坐标</strong>、<strong style="color:#A06A00">拍摄时间</strong>、<strong style="color:#A06A00">设备型号</strong>。分享原图时，这些信息会一并发送。</div>' +
+    (up ? '<div class="upload-zone" onclick="document.getElementById(\'fp\').click()"><div style="font-size:42px">🔍</div><div style="font-weight:600;margin-top:8px">点击上传照片</div><div style="font-size:12px;color:#999;margin-top:4px">100% 本地处理，不上传服务器</div></div>'
     : '<div style="border-radius:18px;overflow:hidden;border:2px solid #e8e5e0"><img src="' + s.src + '" style="width:100%"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:#6b6b6b;text-decoration:underline;align-self:flex-start">重新选择</button>') +
     '<input id="fp" type="file" accept="image/*" hidden/>' +
     '<button onclick="privacyScan()" class="btn btn-primary"' + (!s.file ? ' disabled style="opacity:.4"' : '') + '>🔍 开始扫描</button>' +
-    (s.phase >= 2 && s.cleanedBlob ? '<button onclick="privacyClean()" class="btn btn-outline" style="width:100%">🧹 清除所有隐私信息并下载安全版本</button>' : '') +
+    (s.phase >= 2 && s.cleanedBlob ? '<button onclick="privacyClean()" class="btn btn-outline" style="width:100%">🧹 清除全部隐私信息</button>' : '') +
     '</div>';
 
   let main = '<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:350px;height:100%;overflow:auto">';
   
   if (s.phase === 0) {
     main += '<div style="text-align:center;color:#aaa;padding:20px"><div style="font-size:64px;margin-bottom:12px">🛡️</div><div style="font-weight:600;font-size:16px">上传照片，扫描隐藏的隐私信息</div><div style="font-size:12px;margin-top:6px">100% 本地处理，不上传服务器</div>';
-    // 醒目的提示卡片
     main += '<div style="margin-top:24px;background:#FFF8EC;border:1.5px solid #EDB84A;border-radius:16px;padding:18px 20px;text-align:left;max-width:420px;margin-left:auto;margin-right:auto">' +
       '<div style="display:flex;align-items:flex-start;gap:10px">' +
         '<span style="font-size:22px;flex-shrink:0;margin-top:2px">💡</span>' +
         '<div>' +
-          '<div style="font-size:13px;font-weight:700;color:#A06A00;margin-bottom:6px">如何检测到高风险信息？</div>' +
+          '<div style="font-size:13px;font-weight:700;color:#A06A00;margin-bottom:6px">如何检测到隐私信息？</div>' +
           '<div style="font-size:12px;color:#6b5e4e;line-height:1.8">' +
-            '用<strong>手机相机</strong>拍摄的原始照片（通过<strong>数据线导入</strong>或<strong>微信原图</strong>传输），通常包含 GPS 坐标、拍摄时间和设备型号。<br>' +
+            '用<strong>手机相机</strong>拍摄的原始照片（通过<strong>数据线导入</strong>或<strong>微信原图</strong>传输），通常包含 GPS 坐标和设备信息。<br>' +
             '朋友圈、微博等平台保存的图片已被自动清理，风险较低。' +
           '</div>' +
         '</div>' +
@@ -227,9 +226,9 @@ function renderPrivacy() {
     main += '<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">🔍 扫描结果</div>';
     const riskColors = { high: '#FEF0F0', medium: '#FFF8EC', low: '#EDF7F2' };
     const riskTextColors = { high: '#B03030', medium: '#A06A00', low: '#1A7F45' };
-    const riskLabels = { high: '🔴 发现高危隐私', medium: '🟡 包含部分隐私', low: '🟢 未发现隐私信息' };
+    const riskLabels = { high: '此照片包含位置信息', medium: '此照片包含个人信息', low: '未发现隐私信息' };
     main += '<div style="text-align:center;margin-bottom:16px"><span style="display:inline-block;padding:8px 24px;border-radius:30px;font-size:16px;font-weight:800;background:' + riskColors[s.exif.riskLevel] + ';color:' + riskTextColors[s.exif.riskLevel] + '">' + riskLabels[s.exif.riskLevel] + '</span>';
-    if (s.exif.hasGPS) main += '<div style="font-size:13px;color:#B03030;margin-top:8px;font-weight:600">⚠️ 这张照片包含 GPS 坐标，发布后可能暴露你的位置</div>';
+    if (s.exif.hasGPS) main += '<div style="font-size:13px;color:#B03030;margin-top:8px;font-weight:600">任何人收到原图都能获取你的精确拍摄地点</div>';
     if (s.exif.riskLevel === 'low' && s.exif.info.length === 0) {
       main += '<div style="margin-top:16px;background:#F0F7FF;border:1.5px solid #4F7DC8;border-radius:14px;padding:16px 18px;text-align:left;max-width:420px;margin-left:auto;margin-right:auto">' +
         '<div style="display:flex;align-items:flex-start;gap:10px">' +
@@ -268,7 +267,7 @@ function renderPrivacy() {
       main += '</div></div>';
     }
 
-    main += '<div style="text-align:center;font-size:12px;color:#6b6b6b">点击左下角"清除隐私信息"按钮，生成不含任何元数据的安全版本</div></div>';
+    main += '<div style="text-align:center;font-size:12px;color:#6b6b6b">点击左下角"清除全部隐私信息"按钮，生成不含任何元数据的安全版本</div></div>';
   } else if (s.phase === 3 && s.cleanedBlob) {
     main += '<div style="width:100%"><div style="font-weight:700;margin-bottom:16px;text-align:center">✅ 隐私信息已清除</div>' +
       '<div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);max-width:360px;margin:0 auto 16px"><img src="' + s.cleanedBlob.url + '" style="width:100%;display:block"></div>' +
