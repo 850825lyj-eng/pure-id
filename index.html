@@ -1,4 +1,4 @@
-<!-- 修修图·隐私百宝箱 v8.9 · 修复手机端清除按钮位置 -->
+<!-- 修修图·隐私百宝箱 v8.10 · 手机端提示去“左侧” -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -169,7 +169,7 @@ function render(){
     '<header style="padding:16px 24px 12px;display:flex;align-items:center;flex-shrink:0;flex-direction:'+(isM?'column':'row')+';gap:'+(isM?'10px':'0')+'">'+
       brandHTML + navHTML +
     '</header>'+
-    '<div style="position:fixed;bottom:10px;right:10px;background:#000;color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;opacity:0.7;z-index:9999">v8.9</div>'+
+    '<div style="position:fixed;bottom:10px;right:10px;background:#000;color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;opacity:0.7;z-index:9999">v8.10</div>'+
     '<main style="flex:1;overflow:auto;padding:0 20px 20px">'+body+'</main>'+
   '</div>';
 
@@ -191,7 +191,6 @@ function renderPrivacy(){
     :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
     '<input id="fp" type="file" accept="image/*" hidden/>'+
     '<button onclick="privacyScan()" class="btn btn-primary" style="width:100%"' + (!s.file?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'') + '>🔍 开始扫描</button>'+
-    // 电脑端：清除按钮紧随其后
     (!isM && s.phase>=2 && s.cleanedBlob ? '<button onclick="privacyClean()" class="btn btn-danger" style="width:100%">🧹 清除全部隐私信息</button>' : '')+
     '</div>';
 
@@ -232,11 +231,12 @@ function renderPrivacy(){
       s.exif.rawData.forEach(function(e){main+='<div style="padding:2px 0"><b>'+e.key+'：</b>'+e.val+'</div>'});
       main+='</div></details>';
     }
-    // 提示文字只在电脑端显示
-    if (!isM) {
+    // 提示文字：电脑端保留“左侧”，手机端去掉“左侧”
+    if (isM) {
+      main+='<div style="text-align:center;font-size:12px;color:var(--text2);margin-top:8px">点击「清除全部隐私信息」生成不含任何元数据的安全版本</div>';
+    } else {
       main+='<div style="text-align:center;font-size:12px;color:var(--text2);margin-top:8px">点击左侧「清除全部隐私信息」生成不含任何元数据的安全版本</div>';
     }
-    // 手机端：在结果底部直接放置清除按钮
     if (isM && s.cleanedBlob) {
       main+='<div style="text-align:center;margin-top:16px"><button onclick="privacyClean()" class="btn btn-danger" style="width:100%;max-width:400px">🧹 清除全部隐私信息</button></div>';
     }
