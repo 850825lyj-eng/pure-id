@@ -1,4 +1,4 @@
-<!-- 修修图·隐私百宝箱 v8.8 · 强制刷新+滑块实时反馈 -->
+<!-- 修修图·隐私百宝箱 v8.9 · 修复手机端清除按钮位置 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -42,7 +42,7 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 @keyframes uploadGlow{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.15);border-color:#86efac}50%{box-shadow:0 0 0 6px rgba(34,197,94,0);border-color:#4ade80}}
 .upload-zone{border:2px dashed #4ade80;border-radius:var(--r2);padding:36px 20px;text-align:center;cursor:pointer;background:#FAFBFC;transition:.2s;animation:uploadGlow 2.5s ease-in-out infinite}
 .upload-zone:hover{border-color:var(--accent);background:var(--accent-light);animation:none;box-shadow:0 0 0 4px rgba(34,197,94,.1)}
-/* 标签按钮：极致显眼 */
+/* 标签按钮 */
 .tab-btn{padding:10px 24px;border-radius:30px;font-size:17px;font-weight:900;transition:all .25s cubic-bezier(.4,0,.2,1);color:#333}
 .tab-btn:hover{transform:translateY(-1px)}
 .tab-btn.active{color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.08)}
@@ -53,7 +53,7 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;hei
 .resize-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
 .preview-thumb{display:block;max-width:100%;max-height:120px;width:auto;height:auto;border-radius:12px;margin:0 auto;object-fit:contain;border:none}
 .result-img{max-width:90%;max-height:65vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);display:block;margin-left:auto;margin-right:auto;margin-bottom:16px;border:none}
-/* 手机端标签按钮：强制显眼 */
+/* 手机端标签按钮 */
 .mobile-nav{display:flex;gap:8px;background:#fff;border-radius:32px;padding:5px;box-shadow:var(--shadow);border:1px solid var(--border);width:100%}
 .mobile-tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;border-radius:30px;font-weight:900;transition:all .25s cubic-bezier(.4,0,.2,1)}
 .mobile-tab-btn .icon{font-size:22px;line-height:1}
@@ -169,7 +169,7 @@ function render(){
     '<header style="padding:16px 24px 12px;display:flex;align-items:center;flex-shrink:0;flex-direction:'+(isM?'column':'row')+';gap:'+(isM?'10px':'0')+'">'+
       brandHTML + navHTML +
     '</header>'+
-    '<div style="position:fixed;bottom:10px;right:10px;background:#000;color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;opacity:0.7;z-index:9999">v8.8</div>'+
+    '<div style="position:fixed;bottom:10px;right:10px;background:#000;color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;opacity:0.7;z-index:9999">v8.9</div>'+
     '<main style="flex:1;overflow:auto;padding:0 20px 20px">'+body+'</main>'+
   '</div>';
 
@@ -191,7 +191,8 @@ function renderPrivacy(){
     :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
     '<input id="fp" type="file" accept="image/*" hidden/>'+
     '<button onclick="privacyScan()" class="btn btn-primary" style="width:100%"' + (!s.file?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'') + '>🔍 开始扫描</button>'+
-    (s.phase>=2&&s.cleanedBlob?'<button onclick="privacyClean()" class="btn btn-danger" style="width:100%">🧹 清除全部隐私信息</button>':'')+
+    // 电脑端：清除按钮紧随其后
+    (!isM && s.phase>=2 && s.cleanedBlob ? '<button onclick="privacyClean()" class="btn btn-danger" style="width:100%">🧹 清除全部隐私信息</button>' : '')+
     '</div>';
 
   let main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;height:100%">';
@@ -231,7 +232,14 @@ function renderPrivacy(){
       s.exif.rawData.forEach(function(e){main+='<div style="padding:2px 0"><b>'+e.key+'：</b>'+e.val+'</div>'});
       main+='</div></details>';
     }
-    main+='<div style="text-align:center;font-size:12px;color:var(--text2);margin-top:8px">点击左侧「清除全部隐私信息」生成不含任何元数据的安全版本</div>';
+    // 提示文字只在电脑端显示
+    if (!isM) {
+      main+='<div style="text-align:center;font-size:12px;color:var(--text2);margin-top:8px">点击左侧「清除全部隐私信息」生成不含任何元数据的安全版本</div>';
+    }
+    // 手机端：在结果底部直接放置清除按钮
+    if (isM && s.cleanedBlob) {
+      main+='<div style="text-align:center;margin-top:16px"><button onclick="privacyClean()" class="btn btn-danger" style="width:100%;max-width:400px">🧹 清除全部隐私信息</button></div>';
+    }
     main+='</div>';
   }else if(s.phase===3&&s.cleanedBlob){
     main+='<div style="width:100%;max-width:500px;text-align:center"><div style="font-weight:700;margin-bottom:16px;font-size:18px;color:var(--accent)">✅ 隐私信息已清除</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.06);max-width:360px;margin:0 auto 16px"><img src="'+s.cleanedBlob.url+'" style="width:100%;display:block;border:none"></div><div style="margin-bottom:12px"><span style="display:inline-block;padding:8px 20px;border-radius:20px;background:var(--accent-light);color:var(--accent);font-size:14px;font-weight:700">✅ 安全版本已生成</span></div><div style="font-size:13px;color:var(--text2);margin-bottom:16px">原始：'+(s.file.size/1024).toFixed(1)+' KB → 安全版本：'+(s.cleanedBlob.size/1024).toFixed(1)+' KB</div><button onclick="dl(S.privacy.cleanedBlob,\'safe_'+s.file.name+'\')" class="btn btn-primary">⬇ 下载安全版本</button></div>';
