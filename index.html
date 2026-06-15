@@ -141,7 +141,8 @@
         <p>点击或拖拽图片到此处</p>
         <p class="small-text">支持 JPG/PNG/WebP，可多选但仅处理第一张</p>
       </div>
-      <input type="file" id="fileInput" accept="image/*" hidden>
+      <!-- 将文件输入保留但移除 hidden 让其可点击，但用CSS隐藏防止样式破坏 -->
+      <input type="file" id="fileInput" accept="image/*" style="position:absolute;width:0;height:0;opacity:0;">
 
       <h3 style="margin-top:8px;">🔒 打码工具</h3>
       <div class="tool-row">
@@ -229,45 +230,12 @@
   const fileInput = document.getElementById('fileInput');
   const uploadZone = document.getElementById('uploadZone');
 
-  uploadZone.addEventListener('click', () => fileInput.click());
-
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      loadImage(e.target.files[0]);
-      if (e.target.files.length > 1) showToast('已选择多张图片，仅处理第一张');
-    }
-    fileInput.value = '';
-  });
-
-  uploadZone.addEventListener('dragover', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    this.classList.add('drag-over');
-  });
-  uploadZone.addEventListener('dragleave', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    this.classList.remove('drag-over');
-  });
-  uploadZone.addEventListener('drop', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    this.classList.remove('drag-over');
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      for (let i = 0; i < files.length; i++) {
-        if (files[i].type.startsWith('image/')) {
-          loadImage(files[i]);
-          if (files.length > 1) showToast('已拖入多张图片，仅处理第一张');
-          return;
-        }
-      }
-      showToast('请拖入图片文件');
-    }
-  });
-
+  // 通用加载函数
   function loadImage(file) {
-    if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
+    if (!file.type.startsWith('image/')) {
+      showToast('请选择图片文件');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -283,6 +251,50 @@
     };
     reader.readAsDataURL(file);
   }
+
+  // 点击上传：触发隐藏的 file input
+  uploadZone.addEventListener('click', (e) => {
+    fileInput.click();
+  });
+
+  // 文件选择改变时
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      loadImage(e.target.files[0]);
+      if (e.target.files.length > 1) showToast('已选择多张图片，仅处理第一张');
+    }
+    // 清空以便重复选同一文件
+    fileInput.value = '';
+  });
+
+  // 拖拽上传：直接在 document 上监听以防止子元素干扰
+  uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    uploadZone.classList.add('drag-over');
+  });
+  uploadZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    uploadZone.classList.remove('drag-over');
+  });
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    uploadZone.classList.remove('drag-over');
+    const dt = e.dataTransfer;
+    if (dt.files && dt.files.length > 0) {
+      // 找到第一个图片文件
+      for (let i = 0; i < dt.files.length; i++) {
+        if (dt.files[i].type.startsWith('image/')) {
+          loadImage(dt.files[i]);
+          if (dt.files.length > 1) showToast('已拖入多张图片，仅处理第一张');
+          return;
+        }
+      }
+      showToast('请拖入图片文件');
+    }
+  });
 
   function updatePreview() {
     const url = canvas.toDataURL('image/png');
