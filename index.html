@@ -1,309 +1,328 @@
-<!-- 修修图·隐私百宝箱 v8.10 · 手机端提示去“左侧” -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>修修图·隐私百宝箱 | 图片隐私检测 · 格式转换 · 尺寸调整</title>
-<meta name="description" content="修修图隐私百宝箱，一站式图片隐私保护工具。检测照片中的GPS位置、拍摄时间、设备信息，支持JPG/PNG/WebP格式转换与图片尺寸调整，所有处理在浏览器本地完成，不上传服务器。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
-<style>
-:root {
-  --bg: #F5F7FA; --card: #FFFFFF; --text: #1E293B; --text2: #64748B;
-  --accent: #22C55E; --accent-light: #F0FDF4; --accent-hover: #16A34A;
-  --warn: #F59E0B; --warn-light: #FFFBEB;
-  --danger: #EF4444; --danger-light: #FEF2F2;
-  --info: #3B82F6; --info-light: #EFF6FF;
-  --border: #E2E8F0;
-  --btn-primary: linear-gradient(135deg, #22C55E, #16A34A);
-  --btn-hover: linear-gradient(135deg, #16A34A, #15803D);
-  --shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
-  --r: 24px; --r2: 16px;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text)}
-button,input,select{font-family:inherit}
-button{cursor:pointer;border:none;background:none}
-input[type="range"]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:#E2E8F0}
-input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;box-shadow:0 2px 8px rgba(34,197,94,.25)}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.anim{animation:fadeUp .3s ease}
-.card{background:var(--card);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);border:1px solid var(--border)}
-.btn{display:inline-block;padding:12px 28px;border-radius:30px;font-weight:700;font-size:15px;text-align:center;transition:all .25s cubic-bezier(.4,0,.2,1);text-shadow:0 1px 1px rgba(0,0,0,.06)}
-.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
-.btn:active{transform:translateY(0);box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.btn-primary{background:var(--btn-primary);color:#fff;box-shadow:0 4px 16px rgba(34,197,94,.25)}
-.btn-primary:hover{background:var(--btn-hover);box-shadow:0 8px 24px rgba(34,197,94,.35)}
-.btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--text2);text-shadow:none}
-.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
-.btn-danger{background:var(--danger);color:#fff;box-shadow:0 4px 16px rgba(239,68,68,.25)}
-.btn-danger:hover{background:#DC2626;box-shadow:0 8px 24px rgba(239,68,68,.35)}
-/* 上传区 */
-@keyframes uploadGlow{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.15);border-color:#86efac}50%{box-shadow:0 0 0 6px rgba(34,197,94,0);border-color:#4ade80}}
-.upload-zone{border:2px dashed #4ade80;border-radius:var(--r2);padding:36px 20px;text-align:center;cursor:pointer;background:#FAFBFC;transition:.2s;animation:uploadGlow 2.5s ease-in-out infinite}
-.upload-zone:hover{border-color:var(--accent);background:var(--accent-light);animation:none;box-shadow:0 0 0 4px rgba(34,197,94,.1)}
-/* 标签按钮 */
-.tab-btn{padding:10px 24px;border-radius:30px;font-size:17px;font-weight:900;transition:all .25s cubic-bezier(.4,0,.2,1);color:#333}
-.tab-btn:hover{transform:translateY(-1px)}
-.tab-btn.active{color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.08)}
-@keyframes shieldPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{box-shadow:0 0 0 16px rgba(34,197,94,0)}}
-.shield-icon{animation:shieldPulse 3s infinite;position:relative}
-.shield-icon::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.25)}
-.resize-input{width:80px;padding:10px;border-radius:12px;border:1.5px solid var(--border);font-size:15px;font-weight:700;text-align:center;background:#FAFBFC;flex-shrink:0}
-.resize-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
-.preview-thumb{display:block;max-width:100%;max-height:120px;width:auto;height:auto;border-radius:12px;margin:0 auto;object-fit:contain;border:none}
-.result-img{max-width:90%;max-height:65vh;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);display:block;margin-left:auto;margin-right:auto;margin-bottom:16px;border:none}
-/* 手机端标签按钮 */
-.mobile-nav{display:flex;gap:8px;background:#fff;border-radius:32px;padding:5px;box-shadow:var(--shadow);border:1px solid var(--border);width:100%}
-.mobile-tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;border-radius:30px;font-weight:900;transition:all .25s cubic-bezier(.4,0,.2,1)}
-.mobile-tab-btn .icon{font-size:22px;line-height:1}
-.mobile-tab-btn .word{font-size:13px;line-height:1.3;text-align:center;font-weight:900;color:#333}
-/* 提示框 */
-.tip-box{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:24px 24px}
-.tip-icon{font-size:40px;line-height:1;flex-shrink:0;display:block;margin-bottom:4px}
-.tip-title{font-size:15px;font-weight:700;color:var(--warn);text-align:center}
-.tip-text{font-size:13px;color:#92400E;line-height:1.8;text-align:center}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>修修图·隐私百宝箱 | 图片隐私打码工具</title>
+  <meta name="description" content="修修图·隐私百宝箱，快速给图片中的敏感信息打码。马赛克、模糊、纯色块，本地处理零上传。">
+  <style>
+    :root {
+      --bg-main: #0F172A;
+      --bg-card: #1E293B;
+      --color-primary: #06B6D4;
+      --color-primary-hover: #0891B2;
+      --color-text: #F8FAFC;
+      --color-text-secondary: #94A3B8;
+      --color-text-muted: #64748B;
+      --border-light: rgba(6, 182, 212, 0.12);
+      --border-active: rgba(6, 182, 212, 0.5);
+      --shadow-xs: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-sm: 0 4px 12px rgba(0,0,0,0.4);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --surface: #1E293B;
+      --surface-hover: #233044;
+    }
+    body.light {
+      --bg-main: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --color-primary: #0891B2;
+      --color-primary-hover: #06B6D4;
+      --color-text: #0F172A;
+      --color-text-secondary: #475569;
+      --color-text-muted: #64748B;
+      --border-light: rgba(0,0,0,0.08);
+      --border-active: rgba(8,145,178,0.5);
+      --surface: #FFFFFF;
+      --surface-hover: #F1F5F9;
+      --shadow-xs: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-sm: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg-main); color: var(--color-text); line-height: 1.6;
+      -webkit-font-smoothing: antialiased; padding: 0 16px 40px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 0; }
+    .navbar {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+      padding: 16px 20px; margin-bottom: 32px;
+      background: var(--bg-card); backdrop-filter: blur(8px);
+      border: 1px solid var(--border-light); border-radius: var(--radius);
+      position: sticky; top: 16px; z-index: 20;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.3px; color: var(--color-text); }
+    .brand-icon { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; }
+    .brand-icon svg { width: 100%; height: 100%; }
+    .theme-toggle {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 30px;
+      border: 1px solid var(--border-light); background: transparent; cursor: pointer;
+      font-size: 0.85rem; font-weight: 600; color: var(--color-text-secondary); transition: all var(--transition);
+    }
+    .theme-toggle:hover { border-color: var(--color-primary); color: var(--color-primary); background: rgba(6,182,212,0.1); }
+    .hero { text-align: center; margin-bottom: 32px; }
+    .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; color: var(--color-text); margin-bottom: 8px; }
+    .hero p { font-size: 1rem; color: var(--color-text-secondary); max-width: 600px; margin: 0 auto; }
+
+    .workbench { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) { .workbench { grid-template-columns: 1fr; } }
+    .panel {
+      background: var(--bg-card); border-radius: var(--radius); padding: 20px;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-xs);
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .panel h3 { font-size: 1rem; font-weight: 700; color: var(--color-text); }
+    .upload-zone {
+      border: 2px dashed var(--border-light); border-radius: var(--radius); padding: 48px 16px;
+      text-align: center; cursor: pointer; transition: background var(--transition);
+      background: rgba(255,255,255,0.02);
+    }
+    .upload-zone:hover { background: rgba(6,182,212,0.05); border-color: var(--color-primary); }
+    .tool-row {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 10px; border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+    }
+    .tool-row label { font-size: 0.8rem; color: var(--color-text-secondary); white-space: nowrap; }
+    .tool-row input[type="range"] { flex: 1; accent-color: var(--color-primary); }
+    .canvas-wrapper {
+      position: relative; border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+      overflow: hidden; cursor: crosshair; background: #fff;
+    }
+    .canvas-wrapper canvas { display: block; width: 100%; height: auto; }
+    .result-preview { margin-top: 8px; }
+    .result-preview img { width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border-light); }
+
+    .btn {
+      padding: 10px 24px; border-radius: 30px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      transition: all var(--transition); background: transparent; border: 1.5px solid var(--color-primary);
+      color: var(--color-primary); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .btn:hover { background: var(--color-primary); color: #0F172A; }
+    .btn-ghost {
+      padding: 8px 16px; border-radius: 30px; font-size: 0.85rem; font-weight: 500; cursor: pointer;
+      background: transparent; border: 1px solid var(--border-light); color: var(--color-text-secondary); transition: all var(--transition);
+    }
+    .btn-ghost:hover { border-color: var(--color-primary); color: var(--color-primary); background: rgba(6,182,212,0.1); }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+    .small-text { font-size: 0.8rem; color: var(--color-text-muted); }
+    .footer { text-align: center; margin-top: 48px; padding: 24px 0; border-top: 1px solid var(--border-light); color: var(--color-text-muted); font-size: 0.85rem; }
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--color-primary); color: #0F172A; font-weight: 600;
+      padding: 12px 24px; border-radius: 30px; z-index: 2000; opacity: 0; transition: opacity 0.3s;
+      pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+  </style>
 </head>
 <body>
-<div id="root"></div>
+<div class="container">
+  <nav class="navbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 36 36" fill="none"><rect x="2" y="8" width="32" height="20" rx="4" stroke="#06B6D4" stroke-width="2"/><rect x="6" y="12" width="8" height="8" rx="2" stroke="#06B6D4" stroke-width="2"/><rect x="22" y="12" width="8" height="8" rx="2" stroke="#06B6D4" stroke-width="2"/><line x1="14" y1="16" x2="22" y2="16" stroke="#06B6D4" stroke-width="2"/><rect x="12" y="6" width="12" height="4" rx="1" stroke="#06B6D4" stroke-width="1.5" fill="none"/><circle cx="10" cy="16" r="1.5" fill="#06B6D4"/><circle cx="26" cy="16" r="1.5" fill="#06B6D4"/></svg>
+      </div>
+      <span>修修图<span style="color:var(--color-primary);">·隐私百宝箱</span></span>
+    </div>
+    <button class="theme-toggle" id="themeToggle">🌙 深色模式</button>
+  </nav>
+
+  <div class="hero">
+    <h1>隐私百宝箱</h1>
+    <p>上传图片，涂抹打码。马赛克、模糊、纯色块，所有处理均在本地完成，不上传任何数据。</p>
+  </div>
+
+  <div class="workbench">
+    <div class="panel">
+      <h3>📤 上传图片</h3>
+      <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+        <p>点击上传需要打码的图片</p>
+        <p class="small-text">支持 JPG/PNG/WebP</p>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" hidden onchange="handleFile(event)">
+
+      <h3 style="margin-top:8px;">🔒 打码工具</h3>
+      <div class="tool-row">
+        <label>画笔大小：</label>
+        <input type="range" id="brushSize" min="5" max="80" value="25">
+        <span id="brushSizeDisplay" style="font-size:0.8rem; color:var(--color-text-secondary);">25px</span>
+        <button class="btn-ghost" id="mosaicBtn" onclick="setMode('mosaic')" style="border-color:var(--color-primary);">🧩 马赛克</button>
+        <button class="btn-ghost" id="blurBtn" onclick="setMode('blur')">🌫️ 模糊</button>
+        <button class="btn-ghost" id="solidBtn" onclick="setMode('solid')">⬛ 纯色块</button>
+      </div>
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="editCanvas"></canvas>
+      </div>
+      <div class="btn-group">
+        <button class="btn" onclick="downloadResult()">⬇️ 下载打码图</button>
+        <button class="btn-ghost" onclick="resetImage()">↩️ 撤销所有打码</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>📋 打码预览</h3>
+      <div class="result-preview" id="resultPreview">
+        <p style="text-align:center; color:var(--color-text-muted); padding:40px;">上传图片后此处显示预览</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>© 2025 修修图 Xiuxiutu · 所有处理在浏览器本地完成，零上传。</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-function readExif(file){return new Promise((resolve)=>{
-  if(typeof exifr==='undefined'){const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/lite.umd.js';s.onload=()=>doParse(file,resolve);s.onerror=()=>resolve({info:[],hasGPS:false,hasCamera:false,riskLevel:'low',rawData:null});document.head.appendChild(s)}else{doParse(file,resolve)}
-})}
-async function doParse(file,resolve){try{
-  const data=await exifr.parse(file,{gps:true,tiff:true,iptc:true,xmp:true,icc:true});
-  if(!data){resolve({info:[],hasGPS:false,hasCamera:false,riskLevel:'low',rawData:null});return}
-  const raw=[];for(const k in data){if(data[k]!==undefined&&data[k]!==null&&k!=='constructor')raw.push({key:k,val:typeof data[k]==='object'?JSON.stringify(data[k]):String(data[k])})}
-  const info=[];let hasGPS=false,hasCamera=false;let lat=null,lng=null;
-  if(data.latitude!==undefined&&data.longitude!==undefined){lat=data.latitude;lng=data.longitude}
-  else if(data.GPSLatitude!==undefined&&data.GPSLongitude!==undefined){lat=data.GPSLatitude;lng=data.GPSLongitude}
-  else if(data.gps&&data.gps.latitude!==undefined&&data.gps.longitude!==undefined){lat=data.gps.latitude;lng=data.gps.longitude}
-  else if(data.GPS&&data.GPS.latitude!==undefined&&data.GPS.longitude!==undefined){lat=data.GPS.latitude;lng=data.GPS.longitude}
-  if(lat!==null&&lng!==null){hasGPS=true;info.push({name:'📍 GPS 位置',value:Number(lat).toFixed(4)+', '+Number(lng).toFixed(4),risk:'high',detail:'此照片包含精确的拍摄地点坐标'})}
-  if(data.DateTimeOriginal){const dt=typeof data.DateTimeOriginal==='string'?data.DateTimeOriginal:data.DateTimeOriginal.toISOString();info.push({name:'📅 拍摄时间',value:dt,risk:'medium',detail:'此照片包含精确的拍摄日期和时间'})}
-  if(data.Make||data.Model){hasCamera=true;info.push({name:'📷 拍摄设备',value:[data.Make,data.Model].filter(Boolean).join(' ')||'未知',risk:'medium',detail:'此照片包含相机品牌、型号等信息'})}
-  if(data.LensModel)info.push({name:'🔍 镜头型号',value:data.LensModel,risk:'low',detail:'此照片包含使用的镜头信息'});
-  if(data.FNumber)info.push({name:'⚙️ 光圈',value:'f/'+data.FNumber,risk:'low',detail:'此照片包含光圈设置'});
-  if(data.ExposureTime)info.push({name:'⏱️ 快门速度',value:data.ExposureTime<1?'1/'+Math.round(1/data.ExposureTime)+' 秒':data.ExposureTime+' 秒',risk:'low',detail:'此照片包含快门速度'});
-  if(data.ISO)info.push({name:'💡 ISO',value:'ISO '+data.ISO,risk:'low',detail:'此照片包含感光度设置'});
-  if(data.ImageWidth&&data.ImageHeight)info.push({name:'📐 分辨率',value:data.ImageWidth+' × '+data.ImageHeight+' px',risk:'low',detail:'原始照片的像素尺寸'});
-  if(data.Software)info.push({name:'🖥️ 处理软件',value:data.Software,risk:'low',detail:'此照片包含后期处理软件的版本信息'});
-  let riskLevel='low';if(hasGPS)riskLevel='high';else if(hasCamera||info.some(i=>i.name==='📅 拍摄时间'))riskLevel='medium';
-  resolve({info,hasGPS,hasCamera,riskLevel,rawData:raw.length>0?raw:null})
-}catch(e){resolve({info:[],hasGPS:false,hasCamera:false,riskLevel:'low',rawData:null})}}
+  // 主题切换
+  (function() {
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    const updateButton = () => {
+      themeToggle.innerHTML = body.classList.contains('dark') ? '☀️ 浅色模式' : '🌙 深色模式';
+    };
+    body.classList.remove('dark', 'light');
+    body.classList.add(initialDark ? 'dark' : 'light');
+    updateButton();
+    themeToggle.addEventListener('click', () => {
+      if (body.classList.contains('dark')) {
+        body.classList.replace('dark', 'light');
+        localStorage.setItem('theme', 'light');
+      } else {
+        body.classList.replace('light', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+      updateButton();
+    });
+  })();
 
-function clearExif(file){return new Promise((resolve,reject)=>{
-  const r=new FileReader();r.onload=(e)=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);c.toBlob(b=>resolve({url:URL.createObjectURL(b),blob:b,size:b.size,width:c.width,height:c.height}),file.type||'image/jpeg',.95)};img.onerror=()=>reject(new Error('加载失败'));img.src=e.target.result};r.onerror=()=>reject(new Error('读取失败'));r.readAsDataURL(file)
-})}
-function dl(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
-
-function convert(src,fmt,q){return new Promise((ok)=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);c.toBlob(b=>ok({url:URL.createObjectURL(b),blob:b,size:b.size}),fmt,q/100)};img.src=src})}
-function resizeImg(src,w,h,fmt,q,mode){return new Promise((ok)=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');if(mode==='fill'){ctx.drawImage(img,0,0,w,h)}else{const r=img.naturalWidth/img.naturalHeight,tr=w/h;let dw,dh,ox,oy;if(r>tr){dw=w;dh=w/r;ox=0;oy=(h-dh)/2}else{dh=h;dw=h*r;ox=(w-dw)/2;oy=0}ctx.fillStyle='#FFF';ctx.fillRect(0,0,w,h);ctx.drawImage(img,ox,oy,dw,dh)}c.toBlob(b=>ok({url:URL.createObjectURL(b),blob:b,size:b.size,w,h}),fmt,q/100)};img.src=src})}
-
-const FMT=[{id:"image/jpeg",ext:"jpg"},{id:"image/png",ext:"png"},{id:"image/webp",ext:"webp"}];
-
-let S={tab:0,privacy:{phase:0,file:null,src:null,exif:null,cleanedBlob:null},conv:{src:null,fmt:0,q:80,res:null,size:0,blob:null},resize:{src:null,w:800,h:600,fmt:0,q:80,mode:'fit',res:null,size:0,blob:null}};
-let iw='800',ih='600';const m=()=>window.innerWidth<768;
-
-function load(f,cb){if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>cb(e.target.result);r.readAsDataURL(f)}
-
-function uploadZoneHTML(icon, toolId, onDropHandler) {
-  return '<div class="upload-zone" onDragOver="event.preventDefault()" onDrop="'+onDropHandler+'" onclick="document.getElementById(\''+toolId+'\').click()" style="display:flex;flex-direction:column;align-items:center;justify-content:center">'+
-    '<div style="font-size:42px;text-align:center">'+icon+'</div>'+
-    '<div style="text-align:center;font-weight:600;margin-top:8px;font-size:15px">点击或拖拽图片到此处</div>'+
-    '<div style="text-align:center;font-size:12px;color:var(--text2);margin-top:4px">100% 本地处理，不上传服务器</div>'+
-  '</div>';
-}
-
-function tipBoxHTML(title, text) {
-  return '<div class="tip-box">'+
-    '<div class="tip-icon">💡</div>'+
-    '<div class="tip-title">'+title+'</div>'+
-    '<div class="tip-text">'+text+'</div>'+
-  '</div>';
-}
-
-function mobileTabHTML(icon, word1, word2, index, active) {
-  return '<button class="mobile-tab-btn" onclick="S.tab='+index+';render()" style="background:'+(active?'var(--warn)':'transparent')+';color:'+(active?'#fff':'#333')+'">'+
-    '<span class="icon">'+icon+'</span>'+
-    '<span class="word">'+word1+'</span>'+
-    '<span class="word">'+word2+'</span>'+
-  '</button>';
-}
-
-function render(){
-  const isM=m(),s=S;
-  const tabLabels = [
-    {icon:'🛡️',w1:'隐私',w2:'检测'},
-    {icon:'🔄',w1:'格式',w2:'转换'},
-    {icon:'📐',w1:'尺寸',w2:'调整'}
-  ];
-  let body='';if(s.tab===0)body=renderPrivacy();else if(s.tab===1)body=renderConv();else body=renderResize();
-
-  const brandHTML = '<div style="display:flex;align-items:center;gap:12px;'+(isM?'':'margin-right:auto')+'">'+
-    '<div class="shield-icon" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#22C55E,#16A34A);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;box-shadow:0 4px 16px rgba(34,197,94,.35);border:none">🛡️</div>'+
-    '<div style="text-align:center">'+
-      '<div style="font-size:22px;font-weight:800;letter-spacing:-.5px;text-shadow:0 1px 1px rgba(0,0,0,.04)">修修图·<span style="color:var(--accent)">隐私百宝箱</span></div>'+
-      '<div style="font-size:10px;color:var(--text2);margin-top:2px;text-align:center">图片检测 / 格式转换 / 尺寸调整</div>'+
-    '</div>'+
-  '</div>';
-
-  let navHTML;
-  if (isM) {
-    navHTML = '<div class="mobile-nav">'+
-      tabLabels.map((t,i)=>mobileTabHTML(t.icon,t.w1,t.w2,i,s.tab===i)).join('')+
-    '</div>';
-  } else {
-    const tabs=[
-      {icon:'🛡️',label:'隐私检测'},
-      {icon:'🔄',label:'格式转换'},
-      {icon:'📐',label:'尺寸调整'}
-    ];
-    navHTML = '<nav style="display:flex;gap:6px;background:#fff;border-radius:32px;padding:5px;box-shadow:var(--shadow);border:1px solid var(--border);margin:0 auto">'+
-      tabs.map((t,i)=>'<button class="tab-btn" onclick="S.tab='+i+';render()" style="background:'+(s.tab===i?'var(--warn)':'transparent')+';color:'+(s.tab===i?'#fff':'#333')+';font-weight:900!important;font-size:17px!important">'+t.icon+' <span style="font-weight:900!important;font-size:17px!important;color:'+(s.tab===i?'#fff':'#222')+'">'+t.label+'</span></button>').join('')+
-    '</nav>';
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
   }
 
-  document.getElementById('root').innerHTML='<div style="height:100vh;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)">'+
-    '<header style="padding:16px 24px 12px;display:flex;align-items:center;flex-shrink:0;flex-direction:'+(isM?'column':'row')+';gap:'+(isM?'10px':'0')+'">'+
-      brandHTML + navHTML +
-    '</header>'+
-    '<div style="position:fixed;bottom:10px;right:10px;background:#000;color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;opacity:0.7;z-index:9999">v8.10</div>'+
-    '<main style="flex:1;overflow:auto;padding:0 20px 20px">'+body+'</main>'+
-  '</div>';
+  let mode = 'mosaic';
+  let brushSize = 25;
+  let isDrawing = false;
+  let originalImage = null;
+  const canvas = document.getElementById('editCanvas');
+  const ctx = canvas.getContext('2d');
 
-  setTimeout(()=>{
-    const fp=document.getElementById('fp'),f2=document.getElementById('f2'),f3=document.getElementById('f3');
-    if(fp)fp.onchange=function(){if(this.files[0])privacyLoad(this.files[0])};
-    if(f2)f2.onchange=function(){if(this.files[0])load(this.files[0],r=>{S.conv.src=r;S.conv.res=null;render()})};
-    if(f3)f3.onchange=function(){if(this.files[0])load(this.files[0],r=>{const img=new Image();img.onload=()=>{iw=String(img.naturalWidth);ih=String(img.naturalHeight);S.resize.src=r;S.resize.w=img.naturalWidth;S.resize.h=img.naturalHeight;S.resize.res=null;render()};img.src=r})};
-  },50);
-}
+  document.getElementById('brushSize').addEventListener('input', function() {
+    brushSize = parseInt(this.value);
+    document.getElementById('brushSizeDisplay').textContent = brushSize + 'px';
+  });
 
-function renderPrivacy(){
-  const s=S.privacy,up=!s.src,isM=m();
-  const bar='<div class="card" style="flex:1;display:flex;flex-direction:column;gap:16px;overflow-y:auto">'+
-    '<div style="font-size:20px;font-weight:700;text-align:center">🛡️ 隐私检测</div>'+
-    '<p style="font-size:11px;color:var(--text2);text-align:center;margin-top:-8px">扫描照片中的 GPS 坐标 / 拍摄时间 / 设备信息</p>'+
-    '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">每张照片都携带着你看不见的元数据——<strong style="color:var(--danger)">GPS 坐标</strong>、<strong style="color:var(--warn)">拍摄时间</strong>、<strong style="color:var(--warn)">设备型号</strong>。分享原图时，这些信息会一并发送。</p>'+
-    (up? uploadZoneHTML('🔍', 'fp', "event.preventDefault();if(event.dataTransfer.files[0])privacyLoad(event.dataTransfer.files[0])")
-    :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.privacy.phase=0;S.privacy.src=null;S.privacy.file=null;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
-    '<input id="fp" type="file" accept="image/*" hidden/>'+
-    '<button onclick="privacyScan()" class="btn btn-primary" style="width:100%"' + (!s.file?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'') + '>🔍 开始扫描</button>'+
-    (!isM && s.phase>=2 && s.cleanedBlob ? '<button onclick="privacyClean()" class="btn btn-danger" style="width:100%">🧹 清除全部隐私信息</button>' : '')+
-    '</div>';
-
-  let main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;height:100%">';
-  if(s.phase===0){
-    main+='<div style="text-align:center;color:var(--text2);padding:20px"><div class="shield-icon" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#22C55E,#16A34A);display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;margin:0 auto 16px;border:none">🛡️</div><div style="font-weight:600;font-size:18px">上传照片，检测隐藏的隐私信息</div><div style="font-size:13px;margin-top:8px">100% 本地处理，不上传服务器</div>'+
-      '<div style="margin-top:28px;background:var(--warn-light);border:1.5px solid #FDE68A;border-radius:16px;max-width:440px;margin-left:auto;margin-right:auto">'+
-        tipBoxHTML('如何检测到隐私信息？', '用<strong>手机相机</strong>拍摄的原始照片（通过<strong>数据线导入</strong>或<strong>微信原图</strong>传输），通常包含 GPS 坐标和设备信息。')+
-      '</div></div>';
-  }else if(s.phase===1){
-    main+='<div style="text-align:center"><div style="font-weight:600;margin-bottom:12px;font-size:14px">照片已就绪</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.06);max-width:360px;margin:0 auto"><img src="'+s.src+'" style="width:100%;display:block;border:none"></div></div>';
-  }else if(s.phase===2&&s.exif){
-    main+='<div style="width:100%;max-width:600px">';
-    const rc={high:'var(--danger-light)',medium:'var(--warn-light)',low:'var(--accent-light)'};
-    const rtc={high:'var(--danger)',medium:'var(--warn)',low:'var(--accent)'};
-    const rl={high:'此照片包含位置信息',medium:'此照片包含个人信息',low:'未发现隐私信息'};
-    const rli={high:'🔴',medium:'🟡',low:'🟢'};
-    main+='<div style="text-align:center;margin-bottom:20px"><span style="display:inline-block;padding:10px 28px;border-radius:30px;font-size:17px;font-weight:800;background:'+rc[s.exif.riskLevel]+';color:'+rtc[s.exif.riskLevel]+'">'+rli[s.exif.riskLevel]+' '+rl[s.exif.riskLevel]+'</span>';
-    if(s.exif.hasGPS)main+='<div style="font-size:14px;color:var(--danger);margin-top:10px;font-weight:600">任何人收到原图都能获取你的精确拍摄地点</div>';
-    if(s.exif.riskLevel==='low'&&s.exif.info.length===0){
-      main+='<div style="margin-top:20px;background:var(--warn-light);border:1.5px solid #FDE68A;border-radius:14px;max-width:440px;margin-left:auto;margin-right:auto">'+
-        tipBoxHTML('如何检测到隐私信息？', '用<strong>手机相机</strong>拍摄的原始照片（通过<strong>数据线导入</strong>或<strong>微信原图</strong>传输），通常包含 GPS 坐标和设备信息。')+
-      '</div>';
-    }
-    main+='</div>';
-    if(s.exif.info.length>0){
-      main+='<div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.02),0 2px 8px rgba(0,0,0,.02);border:1px solid var(--border);margin-bottom:16px"><div style="display:grid;gap:8px">';
-      s.exif.info.forEach(function(item){
-        const rBg=item.risk==='high'?'var(--danger-light)':(item.risk==='medium'?'var(--warn-light)':'#F8FAFC');
-        const rBd=item.risk==='high'?'#FECACA':(item.risk==='medium'?'#FDE68A':'var(--border)');
-        const rCl=item.risk==='high'?'var(--danger)':(item.risk==='medium'?'var(--warn)':'var(--accent)');
-        main+='<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;background:'+rBg+';border:1px solid '+rBd+'"><div style="flex:1"><div style="font-size:13px;font-weight:700">'+item.name+'</div><div style="font-size:14px;font-weight:600;color:var(--accent);margin-top:3px">'+item.value+'</div><div style="font-size:11px;color:var(--text2);margin-top:2px">'+item.detail+'</div></div><span style="font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;background:'+rCl+';color:#fff;flex-shrink:0">'+(item.risk==='high'?'高风险':(item.risk==='medium'?'中风险':'一般'))+'</span></div>';
-      });
-      main+='</div></div>';
-    }
-    if(s.exif.rawData&&s.exif.rawData.length>0){
-      main+='<details style="margin-bottom:16px"><summary style="font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;padding:8px 0;text-align:center">📋 原始数据（共'+s.exif.rawData.length+'项）</summary><div style="font-size:11px;color:var(--text2);max-height:200px;overflow:auto;background:#F8FAFC;border-radius:8px;padding:12px;margin-top:8px;border:1px solid var(--border)">';
-      s.exif.rawData.forEach(function(e){main+='<div style="padding:2px 0"><b>'+e.key+'：</b>'+e.val+'</div>'});
-      main+='</div></details>';
-    }
-    // 提示文字：电脑端保留“左侧”，手机端去掉“左侧”
-    if (isM) {
-      main+='<div style="text-align:center;font-size:12px;color:var(--text2);margin-top:8px">点击「清除全部隐私信息」生成不含任何元数据的安全版本</div>';
-    } else {
-      main+='<div style="text-align:center;font-size:12px;color:var(--text2);margin-top:8px">点击左侧「清除全部隐私信息」生成不含任何元数据的安全版本</div>';
-    }
-    if (isM && s.cleanedBlob) {
-      main+='<div style="text-align:center;margin-top:16px"><button onclick="privacyClean()" class="btn btn-danger" style="width:100%;max-width:400px">🧹 清除全部隐私信息</button></div>';
-    }
-    main+='</div>';
-  }else if(s.phase===3&&s.cleanedBlob){
-    main+='<div style="width:100%;max-width:500px;text-align:center"><div style="font-weight:700;margin-bottom:16px;font-size:18px;color:var(--accent)">✅ 隐私信息已清除</div><div style="border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.06);max-width:360px;margin:0 auto 16px"><img src="'+s.cleanedBlob.url+'" style="width:100%;display:block;border:none"></div><div style="margin-bottom:12px"><span style="display:inline-block;padding:8px 20px;border-radius:20px;background:var(--accent-light);color:var(--accent);font-size:14px;font-weight:700">✅ 安全版本已生成</span></div><div style="font-size:13px;color:var(--text2);margin-bottom:16px">原始：'+(s.file.size/1024).toFixed(1)+' KB → 安全版本：'+(s.cleanedBlob.size/1024).toFixed(1)+' KB</div><button onclick="dl(S.privacy.cleanedBlob,\'safe_'+s.file.name+'\')" class="btn btn-primary">⬇ 下载安全版本</button></div>';
+  function setMode(m) {
+    mode = m;
+    document.getElementById('mosaicBtn').style.borderColor = m === 'mosaic' ? 'var(--color-primary)' : 'var(--border-light)';
+    document.getElementById('blurBtn').style.borderColor = m === 'blur' ? 'var(--color-primary)' : 'var(--border-light)';
+    document.getElementById('solidBtn').style.borderColor = m === 'solid' ? 'var(--color-primary)' : 'var(--border-light)';
   }
-  main+='</div>';
 
-  if(isM)return '<div style="display:flex;flex-direction:column;gap:16px">'+bar+main+'</div>';
-  return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0;display:flex;flex-direction:column;height:100%">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+main+'</div></div>';
-}
+  function handleFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        originalImage = img;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        updatePreview();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  }
 
-function renderConv(){
-  const s=S.conv,isM=m();
-  const bar='<div class="card" style="flex:1;display:flex;flex-direction:column;gap:16px;overflow-y:auto">'+
-    '<div style="font-size:20px;font-weight:700;text-align:center">🔄 格式转换</div>'+
-    '<p style="font-size:11px;color:var(--text2);text-align:center;margin-top:-8px">JPG · PNG · WebP 互转</p>'+
-    '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">在 JPG、PNG、WebP 之间自由转换，调节压缩质量，所有处理都在本地完成。</p>'+
-    (!s.src? uploadZoneHTML('🖼️', 'f2', "event.preventDefault();if(event.dataTransfer.files[0])load(event.dataTransfer.files[0],r=>{S.conv.src=r;S.conv.res=null;render()})")
-    :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.conv.src=null;S.conv.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
-    '<input id="f2" type="file" accept="image/*" hidden/>'+
-    '<div style="display:flex;gap:8px">'+FMT.map((f,i)=>'<button onclick="S.conv.fmt='+i+';render()" style="flex:1;padding:14px;border-radius:16px;font-weight:700;font-size:16px;border:2px solid '+(s.fmt===i?'var(--accent)':'var(--border)')+';background:'+(s.fmt===i?'var(--accent-light)':'#fff')+';transition:all .2s;color:'+(s.fmt===i?'var(--accent)':'var(--text2)')+'">.'+f.ext.toUpperCase()+'</button>').join('')+'</div>'+
-    '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2)">压缩质量</span><input type="range" min="10" max="100" value="'+s.q+'" oninput="document.getElementById(\'convQVal\').textContent=this.value+\'%\'" onchange="S.conv.q=parseInt(this.value);render()"><span id="convQVal" style="font-weight:700;font-size:15px;min-width:40px;color:var(--accent)">'+s.q+'%</span></div>'+
-    '<button onclick="convProcess()" class="btn btn-primary" style="width:100%"'+(!s.src?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'')+'>🔄 开始转换</button></div>';
-  const main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;height:100%">'+
-    (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">转换完成 · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" class="result-img"></div><button onclick="dl(S.conv.blob,\'xiuxiutu.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
-    :'<div style="text-align:center;color:var(--text2)"><div style="font-size:56px;margin-bottom:16px">🔄</div><div style="font-weight:600;font-size:16px">上传图片，选择格式，一键转换</div><div style="font-size:12px;margin-top:6px">支持 JPG · PNG · WebP 互转</div></div>')+'</div>';
-  if(isM)return '<div style="display:flex;flex-direction:column;gap:16px">'+bar+main+'</div>';
-  return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0;display:flex;flex-direction:column;height:100%">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+main+'</div></div>';
-}
+  function updatePreview() {
+    const url = canvas.toDataURL('image/png');
+    document.getElementById('resultPreview').innerHTML = `<img src="${url}" alt="打码预览">`;
+  }
 
-function renderResize(){
-  const s=S.resize,isM=m();
-  const bar='<div class="card" style="flex:1;display:flex;flex-direction:column;gap:16px;overflow-y:auto">'+
-    '<div style="font-size:20px;font-weight:700;text-align:center">📐 尺寸调整</div>'+
-    '<p style="font-size:11px;color:var(--text2);text-align:center;margin-top:-8px">等比例缩放 · 拉伸填充</p>'+
-    '<p style="font-size:13px;color:var(--text2);line-height:1.7;text-align:center">精确调整图片尺寸，支持等比例缩放或拉伸填充，选格式、调质量，一步到位。</p>'+
-    (!s.src? uploadZoneHTML('📐', 'f3', "event.preventDefault();if(event.dataTransfer.files[0]){const file=event.dataTransfer.files[0];load(file,r=>{const img=new Image();img.onload=()=>{iw=String(img.naturalWidth);ih=String(img.naturalHeight);S.resize.src=r;S.resize.w=img.naturalWidth;S.resize.h=img.naturalHeight;S.resize.res=null;render()};img.src=r})}")
-    :'<div style="text-align:center"><img src="'+s.src+'" class="preview-thumb"></div><button onclick="S.resize.src=null;S.resize.res=null;render()" style="font-size:12px;color:var(--text2);text-decoration:underline;align-self:center">重新选择</button>')+
-    '<input id="f3" type="file" accept="image/*" hidden/>'+
-    '<div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap">'+
-      '<span style="font-size:12px;color:var(--text2);flex-shrink:0">宽</span>'+
-      '<input type="number" class="resize-input" value="'+iw+'" oninput="iw=this.value">'+
-      '<span style="font-weight:300;color:#CBD5E1;flex-shrink:0">×</span>'+
-      '<span style="font-size:12px;color:var(--text2);flex-shrink:0">高</span>'+
-      '<input type="number" class="resize-input" value="'+ih+'" oninput="ih=this.value">'+
-    '</div>'+
-    '<div style="font-size:11px;color:var(--text2);text-align:center">原始尺寸：'+s.w+' × '+s.h+' px</div>'+
-    '<div style="display:flex;gap:8px"><button onclick="S.resize.mode=\'fit\';render()" style="flex:1;padding:10px;border-radius:14px;font-weight:700;font-size:14px;border:2px solid '+(s.mode==='fit'?'var(--accent)':'var(--border)')+';background:'+(s.mode==='fit'?'var(--accent-light)':'#fff')+';color:'+(s.mode==='fit'?'var(--accent)':'var(--text2)')+'">📐 等比例</button><button onclick="S.resize.mode=\'fill\';render()" style="flex:1;padding:10px;border-radius:14px;font-weight:700;font-size:14px;border:2px solid '+(s.mode==='fill'?'var(--accent)':'var(--border)')+';background:'+(s.mode==='fill'?'var(--accent-light)':'#fff')+';color:'+(s.mode==='fill'?'var(--accent)':'var(--text2)')+'">📏 拉伸</button></div>'+
-    '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text2)">格式</span><select onchange="S.resize.fmt=this.selectedIndex;render()" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--border);font-size:13px;font-weight:600">'+FMT.map(f=>'<option>'+f.ext.toUpperCase()+'</option>').join('')+'</select><span style="font-size:12px;color:var(--text2);margin-left:8px">质量</span><input type="range" min="10" max="100" value="'+s.q+'" oninput="document.getElementById(\'resizeQVal\').textContent=this.value+\'%\'" onchange="S.resize.q=parseInt(this.value);render()"><span id="resizeQVal" style="font-weight:700;font-size:14px;min-width:36px;color:var(--accent)">'+s.q+'%</span></div>'+
-    '<button onclick="resizeProcess()" class="btn btn-primary" style="width:100%"'+(!s.src?' disabled style="opacity:.4;cursor:not-allowed;transform:none;box-shadow:none"':'')+'>📐 开始调整</button></div>';
-  const main='<div class="card anim" style="display:flex;align-items:center;justify-content:center;min-height:400px;height:100%">'+
-    (s.res?'<div style="text-align:center;width:100%"><div style="font-weight:600;margin-bottom:12px;font-size:15px;color:var(--accent)">'+s.w+' × '+s.h+' px · '+(s.size/1024).toFixed(1)+' KB</div><div style="text-align:center"><img src="'+s.res+'" class="result-img"></div><button onclick="dl(S.resize.blob,\'xiuxiutu_resize.'+FMT[s.fmt].ext+'\')" class="btn btn-primary">⬇ 下载 '+FMT[s.fmt].ext.toUpperCase()+'</button></div>'
-    :'<div style="text-align:center;color:var(--text2)"><div style="font-size:56px;margin-bottom:16px">📐</div><div style="font-weight:600;font-size:16px">上传图片，设置尺寸，一键调整</div><div style="font-size:12px;margin-top:6px">支持等比例缩放 · 拉伸填充 · 格式转换</div></div>')+'</div>';
-  if(isM)return '<div style="display:flex;flex-direction:column;gap:16px">'+bar+main+'</div>';
-  return '<div style="display:flex;gap:20px;height:100%"><div style="width:360px;flex-shrink:0;display:flex;flex-direction:column;height:100%">'+bar+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%">'+main+'</div></div>';
-}
+  // 绘制事件
+  canvas.addEventListener('mousedown', (e) => { isDrawing = true; draw(e); });
+  canvas.addEventListener('mousemove', (e) => { if (isDrawing) draw(e); });
+  canvas.addEventListener('mouseup', () => { isDrawing = false; updatePreview(); });
+  canvas.addEventListener('mouseleave', () => { if (isDrawing) { isDrawing = false; updatePreview(); } });
+  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); isDrawing = true; draw(e.touches[0]); });
+  canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (isDrawing) draw(e.touches[0]); });
+  canvas.addEventListener('touchend', () => { isDrawing = false; updatePreview(); });
 
-async function privacyLoad(file){if(!file||!file.type.startsWith('image/'))return;const r=new FileReader();r.onload=function(e){S.privacy.src=e.target.result;S.privacy.file=file;S.privacy.phase=1;S.privacy.exif=null;S.privacy.cleanedBlob=null;render()};r.readAsDataURL(file)}
-async function privacyScan(){if(!S.privacy.file)return;S.privacy.phase=2;render();S.privacy.exif=await readExif(S.privacy.file);render()}
-async function privacyClean(){if(!S.privacy.file)return;S.privacy.phase=3;render();try{S.privacy.cleanedBlob=await clearExif(S.privacy.file)}catch(e){alert('清除失败');S.privacy.phase=2}render()}
-async function convProcess(){const r=await convert(S.conv.src,FMT[S.conv.fmt].id,S.conv.q);S.conv.res=r.url;S.conv.size=r.size;S.conv.blob=r.blob;render()}
-async function resizeProcess(){const w=parseInt(iw),h=parseInt(ih);if(!isNaN(w)&&w>0&&!isNaN(h)&&h>0){S.resize.w=Math.round(w);S.resize.h=Math.round(h)}const r=await resizeImg(S.resize.src,S.resize.w,S.resize.h,FMT[S.resize.fmt].id,S.resize.q,S.resize.mode);S.resize.res=r.url;S.resize.size=r.size;S.resize.blob=r.blob;S.resize.w=r.w;S.resize.h=r.h;render()}
+  function draw(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    const r = brushSize;
 
-render();
-window.addEventListener('resize',render);
+    if (mode === 'mosaic') {
+      const imageData = ctx.getImageData(x - r, y - r, r * 2, r * 2);
+      const data = imageData.data;
+      const blockSize = Math.max(4, Math.floor(r / 3));
+      for (let by = 0; by < r * 2; by += blockSize) {
+        for (let bx = 0; bx < r * 2; bx += blockSize) {
+          let sumR = 0, sumG = 0, sumB = 0, count = 0;
+          for (let dy = 0; dy < blockSize; dy++) {
+            for (let dx = 0; dx < blockSize; dx++) {
+              const idx = ((by + dy) * (r * 2) + (bx + dx)) * 4;
+              if (idx < data.length) { sumR += data[idx]; sumG += data[idx + 1]; sumB += data[idx + 2]; count++; }
+            }
+          }
+          const avgR = sumR / count, avgG = sumG / count, avgB = sumB / count;
+          for (let dy = 0; dy < blockSize; dy++) {
+            for (let dx = 0; dx < blockSize; dx++) {
+              const idx = ((by + dy) * (r * 2) + (bx + dx)) * 4;
+              if (idx < data.length) { data[idx] = avgR; data[idx + 1] = avgG; data[idx + 2] = avgB; }
+            }
+          }
+        }
+      }
+      ctx.putImageData(imageData, x - r, y - r);
+    } else if (mode === 'blur') {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.filter = 'blur(8px)';
+      ctx.drawImage(canvas, 0, 0);
+      ctx.filter = 'none';
+      ctx.restore();
+    } else if (mode === 'solid') {
+      ctx.fillStyle = '#333333';
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function resetImage() {
+    if (!originalImage) return;
+    canvas.width = originalImage.width;
+    canvas.height = originalImage.height;
+    ctx.drawImage(originalImage, 0, 0);
+    updatePreview();
+  }
+
+  function downloadResult() {
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '隐私百宝箱_打码.png';
+    a.click();
+  }
 </script>
 </body>
 </html>
