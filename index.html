@@ -142,7 +142,7 @@ cat << 'EOF' > index.html
         <p>点击或拖拽图片到此处</p>
         <p class="small-text">支持 JPG/PNG/WebP，可多选但仅处理第一张</p>
       </div>
-      <input type="file" id="fileInput" accept="image/*" multiple hidden>
+      <input type="file" id="fileInput" accept="image/*" hidden>
 
       <h3 style="margin-top:8px;">🔒 打码工具</h3>
       <div class="tool-row">
@@ -178,6 +178,7 @@ cat << 'EOF' > index.html
 <div class="toast" id="toast"></div>
 
 <script>
+  // 主题切换
   (function() {
     const themeToggle = document.getElementById('themeToggle');
     const body = document.body;
@@ -208,6 +209,7 @@ cat << 'EOF' > index.html
     setTimeout(() => t.classList.remove('show'), 2000);
   }
 
+  // 打码状态
   let mode = 'mosaic';
   let brushSize = 25;
   let isDrawing = false;
@@ -227,41 +229,15 @@ cat << 'EOF' > index.html
     document.getElementById('solidBtn').style.borderColor = m === 'solid' ? 'var(--color-primary)' : 'var(--border-light)';
   }
 
+  // 上传逻辑
   const fileInput = document.getElementById('fileInput');
   const uploadZone = document.getElementById('uploadZone');
 
-  uploadZone.addEventListener('click', () => fileInput.click());
-
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      loadImage(e.target.files[0]);
-      if (e.target.files.length > 1) showToast('已选择多张图片，仅处理第一张');
-    }
-    fileInput.value = '';
-  });
-
-  uploadZone.addEventListener('dragover', (e) => {
-    e.preventDefault(); e.stopPropagation();
-    uploadZone.classList.add('drag-over');
-  });
-  uploadZone.addEventListener('dragleave', (e) => {
-    e.preventDefault(); e.stopPropagation();
-    uploadZone.classList.remove('drag-over');
-  });
-  uploadZone.addEventListener('drop', (e) => {
-    e.preventDefault(); e.stopPropagation();
-    uploadZone.classList.remove('drag-over');
-    const files = e.dataTransfer?.files;
-    if (files && files.length > 0) {
-      for (const file of files) {
-        if (file.type.startsWith('image/')) { loadImage(file); return; }
-      }
-      showToast('请拖入图片文件');
-    }
-  });
-
   function loadImage(file) {
-    if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
+    if (!file.type.startsWith('image/')) {
+      showToast('请选择图片文件');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -278,11 +254,53 @@ cat << 'EOF' > index.html
     reader.readAsDataURL(file);
   }
 
+  uploadZone.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      loadImage(e.target.files[0]);
+      if (e.target.files.length > 1) showToast('已选择多张图片，仅处理第一张');
+    }
+    fileInput.value = '';
+  });
+
+  // 拖拽上传
+  uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    uploadZone.classList.add('drag-over');
+  });
+  uploadZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    uploadZone.classList.remove('drag-over');
+  });
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    uploadZone.classList.remove('drag-over');
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].type.startsWith('image/')) {
+          loadImage(files[i]);
+          if (files.length > 1) showToast('已拖入多张图片，仅处理第一张');
+          return;
+        }
+      }
+      showToast('请拖入图片文件');
+    }
+  });
+
+  // 绘制预览
   function updatePreview() {
     const url = canvas.toDataURL('image/png');
     document.getElementById('resultPreview').innerHTML = `<img src="${url}" alt="打码预览">`;
   }
 
+  // 打码事件
   canvas.addEventListener('mousedown', (e) => { isDrawing = true; draw(e); });
   canvas.addEventListener('mousemove', (e) => { if (isDrawing) draw(e); });
   canvas.addEventListener('mouseup', () => { isDrawing = false; updatePreview(); });
@@ -349,7 +367,10 @@ cat << 'EOF' > index.html
   }
 
   function downloadResult() {
-    if (!originalImage) { showToast('请先上传图片'); return; }
+    if (!originalImage) {
+      showToast('请先上传图片');
+      return;
+    }
     const url = canvas.toDataURL('image/png');
     const a = document.createElement('a');
     a.href = url;
